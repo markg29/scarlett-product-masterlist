@@ -244,10 +244,10 @@ button{border:0;background:none;cursor:pointer}
 .scanned{font-family:'JetBrains Mono',monospace;font-size:15px;font-weight:700;letter-spacing:-.02em}
 
 /* ---------- calculator ---------- */
-.calc{padding-bottom:8px}
+.calc{padding-top:14px;padding-bottom:8px}
 .cstep{display:flex;align-items:center;gap:9px;font-size:10.5px;font-weight:700;
   letter-spacing:.13em;text-transform:uppercase;color:var(--muted);margin:20px 0 10px}
-.cstep:first-child{margin-top:4px}
+.cstep:first-child{margin-top:0}
 .cnum{flex:none;width:19px;height:19px;border-radius:50%;background:var(--ink);color:#fff;
   display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700}
 .cinp{position:relative;margin-bottom:9px}
@@ -440,7 +440,6 @@ button{border:0;background:none;cursor:pointer}
   </div>
 
   <div class="actions">
-    <button class="btn primary" id="cToItem">Gawing bagong item</button>
     <button class="btn ghost" id="cReset">I-reset</button>
   </div>
 
@@ -826,7 +825,7 @@ function cardHTML(p) {
 }
 
 /* ================= price history tab ================= */
-function loadHistory() {
+function loadHistory(restoreY) {
   $('paneHistory').innerHTML = '<div class="skel"></div><div class="skel"></div><div class="skel"></div>';
   $('shown').textContent = 'Kinukuha ang history…';
   API.call('getAllHistory', [400], function (rows) {
@@ -1067,16 +1066,6 @@ function resetCalc() {
   showResult(0, 0);
 }
 
-/* dalhin ang resulta sa "Bagong item" */
-function calcToItem() {
-  if (!CALC.last.sell) { toast('Kumpletuhin muna ang kuwenta.', true); return; }
-  if (S.tab !== 'products') switchTab('products');
-  openEditor(null);
-  $('fCost').value  = r2(CALC.last.cost);
-  $('fPrice').value = CALC.last.sell;
-  recalc();
-}
-
 buildSuppliers();
 $('cSup').addEventListener('change', function () { pickSupplier(this.value); });
 $('sizeRow').addEventListener('click', function (e) {
@@ -1086,7 +1075,6 @@ $('cPrice').addEventListener('input', computePrice);
 $('cItems').addEventListener('input', computePrice);
 $('cDisc').addEventListener('input', computePrice);
 $('cReset').onclick = resetCalc;
-$('cToItem').onclick = calcToItem;
 $('tabCalc').onclick = function () { switchTab('calc'); };
 
 /* ================= boot ================= */
