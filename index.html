@@ -261,14 +261,17 @@ button{border:0;background:none;cursor:pointer}
 .cinp.pct .pre{font-family:'Archivo';font-weight:700;font-size:15px}
 .chint{font-size:11.5px;color:var(--muted);margin:2px 0 4px}
 
-.supgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
-.sup{display:flex;align-items:center;gap:9px;text-align:left;background:var(--card);
-  border:1px solid var(--line);border-radius:13px;padding:11px 12px;min-height:58px}
-.sup .ico{font-size:19px;flex:none;line-height:1}
-.sup .nm{font-size:12.5px;font-weight:700;line-height:1.25;letter-spacing:-.01em}
-.sup .sub{display:block;font-size:9.5px;font-weight:600;color:var(--muted);letter-spacing:.02em}
-.sup[aria-pressed="true"]{background:var(--ink);border-color:var(--ink);color:#fff}
-.sup[aria-pressed="true"] .sub{color:#9AA1B2}
+.csel{position:relative;margin-bottom:2px}
+.csel select{width:100%;height:52px;padding:0 42px 0 14px;background:var(--paper);
+  border:1px solid var(--line);border-radius:13px;font-size:15.5px;font-weight:600;
+  color:var(--ink);outline:0;appearance:none;-webkit-appearance:none}
+.csel select:focus{border-color:var(--ink);background:var(--card)}
+.csel select.empty{color:var(--muted);font-weight:500}
+.csel::after{content:"";position:absolute;right:18px;top:50%;width:9px;height:9px;
+  border-right:2px solid var(--muted);border-bottom:2px solid var(--muted);
+  transform:translateY(-70%) rotate(45deg);pointer-events:none}
+.csel .note{font-size:11.5px;color:var(--muted);margin-top:7px;min-height:16px}
+.csel .note b{color:var(--ink);font-weight:700}
 
 .sizerow{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
 .sizerow button{height:46px;border-radius:13px;background:var(--card);border:1px solid var(--line);
@@ -404,7 +407,10 @@ button{border:0;background:none;cursor:pointer}
   <div class="chint">Kung per piece na ang presyo, iwanang blangko ang bilang ng piraso.</div>
 
   <div class="cstep"><span class="cnum">2</span> Saan ito galing?</div>
-  <div class="supgrid" id="supGrid"></div>
+  <div class="csel">
+    <select id="cSup" class="empty" aria-label="Supplier"></select>
+    <div class="note" id="cSupNote"></div>
+  </div>
 
   <div class="fold" id="foldSize">
     <div class="cstep"><span class="cnum">3</span> Laki ng mantika</div>
@@ -550,7 +556,8 @@ var S = {
   tab: 'products',
   all: [], view: [], q: '', filter: 'all', sort: 'az', page: 0, size: 40,
   hist: [], histView: [], histFilter: 'all', histPage: 0, histLoaded: false,
-  user: '', editing: null
+  user: '', editing: null,
+  keep: { products:{y:0,pages:1}, history:{y:0,pages:1}, calc:{y:0} }
 };
 var $ = function (id) { return document.getElementById(id); };
 
@@ -705,8 +712,29 @@ function toast(msg, bad) {
 }
 
 /* ================= tabs ================= */
+function scrollY_() { return window.scrollY || window.pageYOffset || 0; }
+
+function rememberTab() {
+  var k = S.keep[S.tab];
+  if (!k) return;
+  k.y = scrollY_();
+  if (S.tab === 'products') k.pages = Math.max(1, S.page);
+  if (S.tab === 'history')  k.pages = Math.max(1, S.histPage);
+}
+
+function restoreScroll(y) {
+  // hintayin ang layout bago bumalik sa dating posisyon
+  requestAnimationFrame(function () {
+    window.scrollTo(0, y);
+    requestAnimationFrame(function () { window.scrollTo(0, y); });
+  });
+}
+
 function switchTab(name) {
+  if (name === S.tab) return;
+  rememberTab();
   S.tab = name;
+
   var prod = name === 'products', hist = name === 'history', calc = name === 'calc';
 
   $('tabProducts').setAttribute('aria-selected', prod ? 'true' : 'false');
@@ -735,9 +763,16 @@ function switchTab(name) {
       : (S.histLoaded ? S.hist.length.toLocaleString() : '\u2014');
   }
 
-  window.scrollTo({ top: 0, behavior: 'auto' });
-  if (prod) applyFilters();
-  else if (hist) { if (!S.histLoaded) loadHistory(); else applyHistFilters(); }
+  var k = S.keep[name] || { y: 0, pages: 1 };
+  if (prod) {
+    applyFilters(k.pages);
+    restoreScroll(k.y);
+  } else if (hist) {
+    if (!S.histLoaded) loadHistory(k.y);        // ibabalik pagkatapos dumating ang data
+    else { applyHistFilters(k.pages); restoreScroll(k.y); }
+  } else {
+    restoreScroll(k.y);
+  }
 }
 
 /* ================= masterlist ================= */
@@ -800,7 +835,8 @@ function loadHistory() {
     POLL.histSig = histSigOf(S.hist);
     if (S.tab === 'history') {
       $('cTotal').textContent = S.hist.length.toLocaleString();
-      applyHistFilters();
+      applyHistFilters(S.keep.history.pages);
+      if (restoreY) restoreScroll(restoreY);
     }
   }, function (e) {
     $('paneHistory').innerHTML = '<div class="empty"><b>Hindi ma-load ang history</b>' +
@@ -875,8 +911,11 @@ function move(label, a, b, suf) {
 /* infinite scroll para sa dalawang tab */
 new IntersectionObserver(function (es) {
   if (!es[0].isIntersecting) return;
-  if (S.tab === 'products') { if (S.page * S.size < S.view.length) renderProducts(); }
-  else { if (S.histPage * S.size < S.histView.length) renderHistory(); }
+  if (S.tab === 'products') {
+    if (S.page * S.size < S.view.length) { renderProducts(); S.keep.products.pages = S.page; }
+  } else if (S.tab === 'history') {
+    if (S.histPage * S.size < S.histView.length) { renderHistory(); S.keep.history.pages = S.histPage; }
+  }
 }, { rootMargin: '400px' }).observe($('sentinel'));
 
 /* ================= price calculator ================= */
@@ -898,20 +937,29 @@ var SUPPLIERS = [
 var CALC = { cat:'', size:'', anim:{}, last:{ cost:0, sell:0 } };
 
 function buildSuppliers() {
-  $('supGrid').innerHTML = SUPPLIERS.map(function (s) {
-    return '<button class="sup" data-cat="' + s.v + '" aria-pressed="false">' +
-      '<span class="ico">' + s.ico + '</span>' +
-      '<span class="nm">' + esc(s.nm) +
-      (s.sub ? '<span class="sub">' + esc(s.sub) + '</span>' : '') +
-      '</span></button>';
-  }).join('');
+  var opts = ['<option value="">Piliin ang supplier\u2026</option>'];
+  SUPPLIERS.forEach(function (x) {
+    opts.push('<option value="' + x.v + '">' + x.ico + '  ' + x.nm +
+      (x.sub ? ' \u2014 ' + x.sub : '') + '</option>');
+  });
+  $('cSup').innerHTML = opts.join('');
 }
 
 function pickSupplier(cat) {
   CALC.cat = cat;
-  Array.prototype.forEach.call(document.querySelectorAll('#supGrid .sup'), function (b) {
-    b.setAttribute('aria-pressed', b.dataset.cat === cat ? 'true' : 'false');
-  });
+  var sel = $('cSup');
+  if (sel.value !== cat) sel.value = cat;
+  sel.classList.toggle('empty', !cat);
+
+  var info = { '': '',
+    'default': '8% markup', 'urbano': '+2 kung \u226410, +5 kung <57, 8% pataas',
+    'flavorline': '40% markup', 'selecta': '23% markup', 'frozen': '23% markup',
+    'ocsi': '20% markup', 'jrandr': '20% markup',
+    'donnajhok': '+5 kung \u226457, 8% pataas', 'mixmagic88': '8% markup, may discount sa puhunan',
+    'marby': 'puhunan \u221210%, benta = presyo', 'gardenia': 'puhunan = presyo, benta +10%',
+    'mantika': 'may sariling divisor kada laki, benta +25%' }[cat] || '';
+  $('cSupNote').innerHTML = info ? '<b>Panuntunan:</b> ' + info : '';
+
   $('foldDisc').classList.toggle('open', cat === 'mixmagic88');
   $('foldSize').classList.toggle('open', cat === 'mantika');
   if (cat !== 'mantika') {
@@ -1009,8 +1057,11 @@ function computePrice() {
 function resetCalc() {
   $('cPrice').value = ''; $('cItems').value = ''; $('cDisc').value = '';
   CALC.cat = ''; CALC.size = '';
-  Array.prototype.forEach.call(document.querySelectorAll('#supGrid .sup, #sizeRow button'),
+  Array.prototype.forEach.call(document.querySelectorAll('#sizeRow button'),
     function (b) { b.setAttribute('aria-pressed', 'false'); });
+  $('cSup').value = '';
+  $('cSup').classList.add('empty');
+  $('cSupNote').innerHTML = '';
   $('foldSize').classList.remove('open');
   $('foldDisc').classList.remove('open');
   showResult(0, 0);
@@ -1019,7 +1070,7 @@ function resetCalc() {
 /* dalhin ang resulta sa "Bagong item" */
 function calcToItem() {
   if (!CALC.last.sell) { toast('Kumpletuhin muna ang kuwenta.', true); return; }
-  switchTab('products');
+  if (S.tab !== 'products') switchTab('products');
   openEditor(null);
   $('fCost').value  = r2(CALC.last.cost);
   $('fPrice').value = CALC.last.sell;
@@ -1027,9 +1078,7 @@ function calcToItem() {
 }
 
 buildSuppliers();
-$('supGrid').addEventListener('click', function (e) {
-  var b = e.target.closest('.sup'); if (b) pickSupplier(b.dataset.cat);
-});
+$('cSup').addEventListener('change', function () { pickSupplier(this.value); });
 $('sizeRow').addEventListener('click', function (e) {
   var b = e.target.closest('button'); if (b) pickSize(b.dataset.size);
 });
@@ -1179,6 +1228,7 @@ document.addEventListener('visibilitychange', function () {
       var hdr = document.querySelector('.hdr');
       if (y > 70) hdr.classList.add('compact');
       else if (y < 40) hdr.classList.remove('compact');
+      if (S.keep[S.tab]) S.keep[S.tab].y = y;
       ticking = false;
     });
   }, { passive: true });
@@ -1657,7 +1707,8 @@ $('tabHistory').onclick  = function () { switchTab('history'); };
 $('q').addEventListener('input', function () {
   S.q = this.value;
   $('searchBox').classList.toggle('has', !!this.value);
-  if (S.tab === 'products') applyFilters(); else if (S.histLoaded) applyHistFilters();
+  if (S.tab === 'products') { S.keep.products.pages = 1; applyFilters(); }
+  else if (S.histLoaded)    { S.keep.history.pages = 1; applyHistFilters(); }
 });
 $('clearQ').onclick = function () {
   $('q').value = ''; S.q = '';
@@ -1679,7 +1730,9 @@ document.querySelectorAll('#chipsProducts .chip').forEach(function (c) {
       c.setAttribute('aria-pressed', 'true');
       S.filter = c.dataset.f;
     }
+    S.keep.products.y = 0; S.keep.products.pages = 1;
     applyFilters();
+    window.scrollTo(0, 0);
   };
 });
 document.querySelectorAll('#chipsHistory .chip').forEach(function (c) {
@@ -1689,7 +1742,9 @@ document.querySelectorAll('#chipsHistory .chip').forEach(function (c) {
     });
     c.setAttribute('aria-pressed', 'true');
     S.histFilter = c.dataset.h;
+    S.keep.history.y = 0; S.keep.history.pages = 1;
     applyHistFilters();
+    window.scrollTo(0, 0);
   };
 });
 
