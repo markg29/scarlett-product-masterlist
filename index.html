@@ -243,6 +243,60 @@ button{border:0;background:none;cursor:pointer}
 .camoff p{margin:0;font-size:13px;color:var(--muted);line-height:1.5}
 .scanned{font-family:'JetBrains Mono',monospace;font-size:15px;font-weight:700;letter-spacing:-.02em}
 
+/* ---------- calculator ---------- */
+.calc{padding-bottom:8px}
+.cstep{display:flex;align-items:center;gap:9px;font-size:10.5px;font-weight:700;
+  letter-spacing:.13em;text-transform:uppercase;color:var(--muted);margin:20px 0 10px}
+.cstep:first-child{margin-top:4px}
+.cnum{flex:none;width:19px;height:19px;border-radius:50%;background:var(--ink);color:#fff;
+  display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700}
+.cinp{position:relative;margin-bottom:9px}
+.cinp .pre{position:absolute;left:14px;top:50%;transform:translateY(-50%);
+  font-family:'JetBrains Mono',monospace;font-size:15px;color:var(--muted);pointer-events:none}
+.cinp input{width:100%;height:52px;padding:0 14px 0 36px;background:var(--paper);
+  border:1px solid var(--line);border-radius:13px;font-family:'JetBrains Mono',monospace;
+  font-size:17px;outline:0}
+.cinp input:focus{border-color:var(--ink);background:var(--card)}
+.cinp.pcs input{padding-left:50px}
+.cinp.pct .pre{font-family:'Archivo';font-weight:700;font-size:15px}
+.chint{font-size:11.5px;color:var(--muted);margin:2px 0 4px}
+
+.supgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.sup{display:flex;align-items:center;gap:9px;text-align:left;background:var(--card);
+  border:1px solid var(--line);border-radius:13px;padding:11px 12px;min-height:58px}
+.sup .ico{font-size:19px;flex:none;line-height:1}
+.sup .nm{font-size:12.5px;font-weight:700;line-height:1.25;letter-spacing:-.01em}
+.sup .sub{display:block;font-size:9.5px;font-weight:600;color:var(--muted);letter-spacing:.02em}
+.sup[aria-pressed="true"]{background:var(--ink);border-color:var(--ink);color:#fff}
+.sup[aria-pressed="true"] .sub{color:#9AA1B2}
+
+.sizerow{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
+.sizerow button{height:46px;border-radius:13px;background:var(--card);border:1px solid var(--line);
+  font-weight:700;font-size:13.5px;font-family:'JetBrains Mono',monospace}
+.sizerow button[aria-pressed="true"]{background:var(--ink);border-color:var(--ink);color:#fff}
+
+.fold{max-height:0;overflow:hidden;transition:max-height .25s ease}
+.fold.open{max-height:260px}
+
+.resgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:6px}
+.res{border-radius:14px;padding:14px 14px 13px}
+.res .t{font-size:9.5px;letter-spacing:.14em;text-transform:uppercase;font-weight:700}
+.res .v{font-family:'JetBrains Mono',monospace;font-weight:700;font-size:24px;
+  letter-spacing:-.04em;margin-top:4px;line-height:1.05}
+.res.cost{background:var(--paper)}
+.res.cost .t{color:var(--muted)}
+.res.sell{background:var(--tag)}
+.res.sell .t{color:#7A5B00}
+
+.kita{display:none;align-items:center;justify-content:space-between;gap:10px;margin-top:8px;
+  background:rgba(14,124,90,.10);border-radius:13px;padding:12px 14px}
+.kita.on{display:flex}
+.kita .t{font-size:10px;letter-spacing:.14em;text-transform:uppercase;font-weight:700;color:var(--good)}
+.kita .v{font-family:'JetBrains Mono',monospace;font-weight:700;font-size:19px;
+  letter-spacing:-.03em;color:var(--good)}
+
+.calcnote{font-size:11.5px;color:var(--muted);text-align:center;margin:18px 0 4px;line-height:1.5}
+
 /* offline banner */
 .offbar{position:fixed;left:0;right:0;top:0;z-index:60;background:var(--scarlet);color:#fff;
   font-size:12.5px;font-weight:700;text-align:center;padding:7px 12px;
@@ -294,6 +348,7 @@ button{border:0;background:none;cursor:pointer}
   <div class="tabs" role="tablist">
     <button class="tab" id="tabProducts" role="tab" aria-selected="true" aria-controls="paneProducts">Masterlist</button>
     <button class="tab" id="tabHistory" role="tab" aria-selected="false" aria-controls="paneHistory">Price history</button>
+    <button class="tab" id="tabCalc" role="tab" aria-selected="false" aria-controls="paneCalc">Calculator</button>
   </div>
 
   <button class="install" id="installBtn">I-install ang app</button>
@@ -335,6 +390,57 @@ button{border:0;background:none;cursor:pointer}
 
 <main class="pane" id="paneProducts" role="tabpanel" aria-labelledby="tabProducts"></main>
 <main class="pane" id="paneHistory" role="tabpanel" aria-labelledby="tabHistory" hidden></main>
+<main class="pane calc" id="paneCalc" role="tabpanel" aria-labelledby="tabCalc" hidden>
+
+  <div class="cstep"><span class="cnum">1</span> Ilagay ang presyo</div>
+  <div class="cinp">
+    <span class="pre">&#8369;</span>
+    <input id="cPrice" inputmode="decimal" placeholder="Per piece o per case" aria-label="Presyo">
+  </div>
+  <div class="cinp pcs">
+    <span class="pre" style="font-family:'Archivo';font-size:12.5px;font-weight:700">pcs</span>
+    <input id="cItems" inputmode="decimal" placeholder="Bilang ng piraso sa case" aria-label="Bilang ng piraso">
+  </div>
+  <div class="chint">Kung per piece na ang presyo, iwanang blangko ang bilang ng piraso.</div>
+
+  <div class="cstep"><span class="cnum">2</span> Saan ito galing?</div>
+  <div class="supgrid" id="supGrid"></div>
+
+  <div class="fold" id="foldSize">
+    <div class="cstep"><span class="cnum">3</span> Laki ng mantika</div>
+    <div class="sizerow" id="sizeRow">
+      <button data-size="1.5L" aria-pressed="false">1.5 L</button>
+      <button data-size="1L" aria-pressed="false">1 L</button>
+      <button data-size="350ml" aria-pressed="false">350 ml</button>
+    </div>
+  </div>
+
+  <div class="fold" id="foldDisc">
+    <div class="cstep"><span class="cnum">3</span> Magkano ang discount?</div>
+    <div class="cinp pct">
+      <span class="pre">%</span>
+      <input id="cDisc" inputmode="decimal" placeholder="Halimbawa: 10" aria-label="Discount">
+    </div>
+  </div>
+
+  <div class="cstep" style="margin-top:22px"><span class="cnum">&#10003;</span> Resulta</div>
+  <div class="resgrid">
+    <div class="res cost"><div class="t">Puhunan</div><div class="v">&#8369;<span id="cCost">0.00</span></div></div>
+    <div class="res sell"><div class="t">Benta</div><div class="v">&#8369;<span id="cSell">0</span></div></div>
+  </div>
+  <div class="kita" id="cKitaBox">
+    <span class="t">Kita kada piraso</span>
+    <span class="v">&#8369;<span id="cKita">0.00</span></span>
+  </div>
+
+  <div class="actions">
+    <button class="btn primary" id="cToItem">Gawing bagong item</button>
+    <button class="btn ghost" id="cReset">I-reset</button>
+  </div>
+
+  <p class="calcnote">Kada deliver, i-check palagi ang presyo.</p>
+</main>
+
 <div id="sentinel" style="height:1px"></div>
 
 <button class="fab" id="addBtn">
@@ -454,8 +560,8 @@ var $ = function (id) { return document.getElementById(id); };
    TOKEN   = kailangang PAREHO sa TOKEN na nasa Code.gs
 ==================================================================== */
 var CONFIG = {
-  API_URL: 'https://script.google.com/macros/s/AKfycbwGoOeayjQxiAfM-BArfCzmbdKiaw-gT_oI-Lwi74FY2zF2Cc0NwK4wKyw29jIsdnax/exec',
-  TOKEN:   'k7mQx2vNp9wRtL4zJ8hB3sYcF6dG',
+  API_URL: '',
+  TOKEN:   '',
   USER:    'scarlettgrocery1@gmail.com'   // ito ang isusulat sa UPDATED BY
 };
 
@@ -601,24 +707,37 @@ function toast(msg, bad) {
 /* ================= tabs ================= */
 function switchTab(name) {
   S.tab = name;
-  var prod = name === 'products';
+  var prod = name === 'products', hist = name === 'history', calc = name === 'calc';
+
   $('tabProducts').setAttribute('aria-selected', prod ? 'true' : 'false');
-  $('tabHistory').setAttribute('aria-selected', prod ? 'false' : 'true');
+  $('tabHistory').setAttribute('aria-selected',  hist ? 'true' : 'false');
+  $('tabCalc').setAttribute('aria-selected',     calc ? 'true' : 'false');
+
   $('paneProducts').hidden = !prod;
-  $('paneHistory').hidden = prod;
+  $('paneHistory').hidden  = !hist;
+  $('paneCalc').hidden     = !calc;
+
   $('chipsProducts').hidden = !prod;
-  $('chipsHistory').hidden = prod;
+  $('chipsHistory').hidden  = !hist;
+  document.querySelector('.searchwrap').hidden = calc;
+  document.querySelector('.listmeta').hidden   = calc;
+  document.querySelector('.counts').style.visibility = calc ? 'hidden' : 'visible';
   $('addBtn').hidden = !prod;
-  $('pageTitle').textContent = prod ? 'Product Masterlist' : 'Price History';
-  $('q').placeholder = prod ? 'Hanapin: pangalan, code, barcode…' : 'Hanapin sa history: pangalan o code…';
+
+  $('pageTitle').textContent = prod ? 'Product Masterlist'
+                             : hist ? 'Price History' : 'Price Calculator';
+  $('q').placeholder = prod ? 'Hanapin: pangalan, code, barcode\u2026'
+                            : 'Hanapin sa history: pangalan o code\u2026';
   $('cLabel').textContent = prod ? 'items' : 'changes';
-  $('cTotal').textContent = prod
-    ? S.all.length.toLocaleString()
-    : (S.histLoaded ? S.hist.length.toLocaleString() : '—');
+  if (!calc) {
+    $('cTotal').textContent = prod
+      ? S.all.length.toLocaleString()
+      : (S.histLoaded ? S.hist.length.toLocaleString() : '\u2014');
+  }
+
   window.scrollTo({ top: 0, behavior: 'auto' });
-  if (prod) { applyFilters(); }
-  else if (!S.histLoaded) { loadHistory(); }
-  else { applyHistFilters(); }
+  if (prod) applyFilters();
+  else if (hist) { if (!S.histLoaded) loadHistory(); else applyHistFilters(); }
 }
 
 /* ================= masterlist ================= */
@@ -760,6 +879,167 @@ new IntersectionObserver(function (es) {
   else { if (S.histPage * S.size < S.histView.length) renderHistory(); }
 }, { rootMargin: '400px' }).observe($('sentinel'));
 
+/* ================= price calculator ================= */
+/* Buo at hindi ginalaw ang mga formula galing sa Scarlett Calculator. */
+var SUPPLIERS = [
+  { v:'default',    ico:'\uD83C\uDFF7\uFE0F', nm:'Default',      sub:'8% markup' },
+  { v:'urbano',     ico:'\uD83D\uDC8A', nm:'Urbano' },
+  { v:'flavorline', ico:'\uD83C\uDF36\uFE0F', nm:'Flavorline',   sub:'Spice Kitchen' },
+  { v:'selecta',    ico:'\uD83C\uDF66', nm:'Selecta' },
+  { v:'frozen',     ico:'\u2744\uFE0F', nm:'Frozen',              sub:'CDO / Pampanga' },
+  { v:'ocsi',       ico:'\uD83E\uDD5B', nm:'Ocsi' },
+  { v:'jrandr',     ico:'\uD83E\uDDFC', nm:'Jr and R' },
+  { v:'donnajhok',  ico:'\uD83E\uDDFA', nm:'Donna / Jhok' },
+  { v:'mixmagic88', ico:'\u2728', nm:'Mix / Magic88' },
+  { v:'marby',      ico:'\uD83E\uDD50', nm:'Marby' },
+  { v:'gardenia',   ico:'\uD83C\uDF5E', nm:'Gardenia' },
+  { v:'mantika',    ico:'\uD83E\uDED9', nm:'Mantika Refill' }
+];
+var CALC = { cat:'', size:'', anim:{}, last:{ cost:0, sell:0 } };
+
+function buildSuppliers() {
+  $('supGrid').innerHTML = SUPPLIERS.map(function (s) {
+    return '<button class="sup" data-cat="' + s.v + '" aria-pressed="false">' +
+      '<span class="ico">' + s.ico + '</span>' +
+      '<span class="nm">' + esc(s.nm) +
+      (s.sub ? '<span class="sub">' + esc(s.sub) + '</span>' : '') +
+      '</span></button>';
+  }).join('');
+}
+
+function pickSupplier(cat) {
+  CALC.cat = cat;
+  Array.prototype.forEach.call(document.querySelectorAll('#supGrid .sup'), function (b) {
+    b.setAttribute('aria-pressed', b.dataset.cat === cat ? 'true' : 'false');
+  });
+  $('foldDisc').classList.toggle('open', cat === 'mixmagic88');
+  $('foldSize').classList.toggle('open', cat === 'mantika');
+  if (cat !== 'mantika') {
+    CALC.size = '';
+    Array.prototype.forEach.call(document.querySelectorAll('#sizeRow button'), function (b) {
+      b.setAttribute('aria-pressed', 'false');
+    });
+  }
+  if (cat !== 'mixmagic88') $('cDisc').value = '';
+  computePrice();
+}
+
+function pickSize(sz) {
+  CALC.size = sz;
+  Array.prototype.forEach.call(document.querySelectorAll('#sizeRow button'), function (b) {
+    b.setAttribute('aria-pressed', b.dataset.size === sz ? 'true' : 'false');
+  });
+  computePrice();
+}
+
+function animateNum(id, target, isFloat) {
+  if (CALC.anim[id]) cancelAnimationFrame(CALC.anim[id]);
+  var el = $(id);
+  var start = parseFloat(String(el.textContent).replace(/,/g, '')) || 0;
+  var t0 = performance.now();
+  function step(now) {
+    var pr = Math.min((now - t0) / 420, 1);
+    var ease = 1 - Math.pow(1 - pr, 3);
+    var cur = start + (target - start) * ease;
+    el.textContent = isFloat ? cur.toFixed(2) : Math.round(cur).toString();
+    if (pr < 1) CALC.anim[id] = requestAnimationFrame(step);
+    else el.textContent = isFloat ? target.toFixed(2) : Math.round(target).toString();
+  }
+  CALC.anim[id] = requestAnimationFrame(step);
+}
+
+function showResult(puhunan, benta) {
+  var kita = benta - puhunan;
+  CALC.last = { cost: puhunan, sell: benta };
+  animateNum('cCost', puhunan, true);
+  animateNum('cSell', benta, false);
+  if (benta > 0 && kita > 0) {
+    animateNum('cKita', kita, true);
+    $('cKitaBox').classList.add('on');
+  } else {
+    $('cKitaBox').classList.remove('on');
+  }
+}
+
+function computePrice() {
+  var casePrice = parseFloat($('cPrice').value);
+  var items     = parseFloat($('cItems').value);
+  var discount  = parseFloat($('cDisc').value) || 0;
+
+  if (isNaN(casePrice) || casePrice <= 0) return showResult(0, 0);
+
+  var discounted = casePrice - (casePrice * (discount / 100));
+  var unitCost   = items ? discounted / items : discounted;
+  var baseUnit   = items ? casePrice / items  : casePrice;
+
+  var puhunan = unitCost, benta = 0;
+
+  switch (CALC.cat) {
+    case 'urbano':
+      benta = baseUnit <= 10 ? baseUnit + 2 : baseUnit < 57 ? baseUnit + 5 : baseUnit * 1.08;
+      break;
+    case 'flavorline':  benta = baseUnit * 1.40; break;
+    case 'default':     benta = baseUnit * 1.08; break;
+    case 'selecta':
+    case 'frozen':      benta = baseUnit * 1.23; break;
+    case 'ocsi':
+    case 'jrandr':      benta = baseUnit * 1.20; break;
+    case 'donnajhok':   benta = baseUnit <= 57 ? baseUnit + 5 : baseUnit * 1.08; break;
+    case 'mixmagic88':  benta = baseUnit * 1.08; break;
+    case 'marby':
+      puhunan = casePrice - (casePrice * 0.10);
+      benta   = casePrice;
+      break;
+    case 'gardenia':
+      puhunan = casePrice;
+      benta   = casePrice * 1.10;
+      break;
+    case 'mantika':
+      if      (CALC.size === '1.5L')  puhunan = (casePrice / 13)   + 7.5;
+      else if (CALC.size === '1L')    puhunan = (casePrice / 19.5) + 4.7;
+      else if (CALC.size === '350ml') puhunan = (casePrice / 55)   + 3;
+      else puhunan = 0;
+      benta = puhunan * 1.25;
+      break;
+  }
+
+  showResult(puhunan, Math.round(benta));
+}
+
+function resetCalc() {
+  $('cPrice').value = ''; $('cItems').value = ''; $('cDisc').value = '';
+  CALC.cat = ''; CALC.size = '';
+  Array.prototype.forEach.call(document.querySelectorAll('#supGrid .sup, #sizeRow button'),
+    function (b) { b.setAttribute('aria-pressed', 'false'); });
+  $('foldSize').classList.remove('open');
+  $('foldDisc').classList.remove('open');
+  showResult(0, 0);
+}
+
+/* dalhin ang resulta sa "Bagong item" */
+function calcToItem() {
+  if (!CALC.last.sell) { toast('Kumpletuhin muna ang kuwenta.', true); return; }
+  switchTab('products');
+  openEditor(null);
+  $('fCost').value  = r2(CALC.last.cost);
+  $('fPrice').value = CALC.last.sell;
+  recalc();
+}
+
+buildSuppliers();
+$('supGrid').addEventListener('click', function (e) {
+  var b = e.target.closest('.sup'); if (b) pickSupplier(b.dataset.cat);
+});
+$('sizeRow').addEventListener('click', function (e) {
+  var b = e.target.closest('button'); if (b) pickSize(b.dataset.size);
+});
+$('cPrice').addEventListener('input', computePrice);
+$('cItems').addEventListener('input', computePrice);
+$('cDisc').addEventListener('input', computePrice);
+$('cReset').onclick = resetCalc;
+$('cToItem').onclick = calcToItem;
+$('tabCalc').onclick = function () { switchTab('calc'); };
+
 /* ================= boot ================= */
 function boot() {
   S.user = Who.get();
@@ -832,6 +1112,7 @@ function sheetOpen() {
 
 // ibalik ang list sa dating haba at posisyon
 function repaintKeepingScroll() {
+  if (S.tab === 'calc') return;
   var y = window.scrollY || window.pageYOffset || 0;
   if (S.tab === 'products') applyFilters(S.page);
   else applyHistFilters(S.histPage);
