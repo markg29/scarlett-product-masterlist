@@ -1,0 +1,31 @@
+{
+  "name": "Product Masterlist — Scarlett Grocery",
+  "short_name": "Masterlist",
+  "description": "Presyo, markup at price history ng buong listahan ng produkto.",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#12141A",
+  "theme_color": "#12141A",
+  "lang": "fil",
+  "icons": [
+    { "src": "./icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "./icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "./icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ],
+  "shortcuts": [
+    {
+      "name": "Bagong item",
+      "short_name": "Bagong item",
+      "url": "./index.html?go=new",
+      "icons": [{ "src": "./icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "I-scan ang barcode",
+      "short_name": "Scan",
+      "url": "./index.html?go=scan",
+      "icons": [{ "src": "./icon-192.png", "sizes": "192x192" }]
+    }
+  ]
+}
