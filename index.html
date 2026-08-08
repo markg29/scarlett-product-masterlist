@@ -30,7 +30,7 @@ body{
   background:var(--paper); color:var(--ink);
   font-family:'Archivo',system-ui,-apple-system,sans-serif;
   font-size:15px; line-height:1.45; -webkit-font-smoothing:antialiased;
-  padding-bottom:calc(96px + var(--safe-b));
+  padding-bottom:calc(148px + var(--safe-b));
 }
 button,input,textarea,select{font:inherit;color:inherit}
 button{border:0;background:none;cursor:pointer}
@@ -44,22 +44,30 @@ button{border:0;background:none;cursor:pointer}
   transition:padding-top .18s ease}
 .hdr.compact{padding-top:calc(6px + env(safe-area-inset-top,0px))}
 .brand{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;margin-bottom:12px;
-  max-height:64px;overflow:hidden;transition:max-height .18s ease,opacity .18s ease,margin-bottom .18s ease}
+  max-height:72px;overflow:hidden;
+  transition:max-height .18s ease,opacity .18s ease,margin-bottom .18s ease}
+.brand > div:first-child{min-width:0;flex:1}
+.brand h1{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .hdr.compact .brand{max-height:0;opacity:0;margin-bottom:0}
-.eyebrow{font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:#8A91A3;font-weight:600}
+.eyebrow{display:block;font-size:10px;letter-spacing:.18em;text-transform:uppercase;
+  color:#8A91A3;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  max-width:100%;padding:0}
 .brand h1{margin:2px 0 0;font-size:22px;font-weight:800;letter-spacing:-.02em}
 .counts{text-align:right;flex:none}
 .counts .n{font-size:20px;font-weight:700;letter-spacing:-.02em}
 .counts .l{font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:#8A91A3}
 
-/* tabs */
-.tabs{display:flex;gap:0;border-bottom:1px solid #2A2E38;margin-bottom:12px}
-.tab{position:relative;padding:10px 2px 11px;margin-right:22px;font-size:14px;font-weight:700;
-  color:#767D8E;letter-spacing:-.01em}
-.tab[aria-selected="true"]{color:#fff}
-.tab[aria-selected="true"]::after{content:"";position:absolute;left:0;right:0;bottom:-1px;
-  height:2px;background:var(--scarlet);border-radius:2px}
-.tab .badge-n{font-family:'JetBrains Mono',monospace;font-size:11px;color:#767D8E;margin-left:5px}
+/* bottom nav */
+.bnav{position:fixed;left:0;right:0;bottom:0;z-index:35;display:flex;
+  background:var(--card);border-top:1px solid var(--line);
+  padding-bottom:var(--safe-b);box-shadow:0 -2px 14px rgba(10,12,16,.06)}
+.bnav button{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:3px;padding:9px 4px 8px;color:var(--muted);position:relative}
+.bnav button svg{width:22px;height:22px;stroke-width:2}
+.bnav button span{font-size:10.5px;font-weight:700;letter-spacing:.01em}
+.bnav button[aria-selected="true"]{color:var(--ink)}
+.bnav button[aria-selected="true"]::before{content:"";position:absolute;top:0;left:50%;
+  transform:translateX(-50%);width:26px;height:2.5px;border-radius:0 0 3px 3px;background:var(--scarlet)}
 
 .searchwrap{background:var(--ink);padding-bottom:10px}
 .search{display:flex;align-items:center;gap:10px;background:#1E222B;border:1px solid #2E333F;
@@ -85,6 +93,14 @@ button{border:0;background:none;cursor:pointer}
 .listmeta{display:flex;justify-content:space-between;align-items:center;
   padding:14px var(--pad) 8px;font-size:11px;letter-spacing:.12em;text-transform:uppercase;
   color:var(--muted);font-weight:600}
+.sync{display:flex;align-items:center;gap:6px;font:inherit;color:var(--muted);
+  letter-spacing:.1em;text-transform:uppercase}
+.sync .dot{width:6px;height:6px;border-radius:50%;background:var(--good);flex:none}
+.sync.stale .dot{background:var(--tag)}
+.sync.off{color:var(--scarlet)}
+.sync.off .dot{background:var(--scarlet)}
+.sync.busy .dot{animation:blip 1s infinite}
+@keyframes blip{50%{opacity:.25}}
 .pane{padding:0 var(--pad)}
 .item{display:flex;gap:12px;align-items:center;width:100%;text-align:left;
   background:var(--card);border:1px solid var(--line);border-radius:var(--r);
@@ -105,6 +121,11 @@ button{border:0;background:none;cursor:pointer}
 .tag .p{display:block;font-family:'JetBrains Mono',monospace;font-weight:700;font-size:17px;
   letter-spacing:-.04em;line-height:1.05}
 .tag .m{display:block;font-size:10px;font-weight:700;letter-spacing:.02em;color:#7A5B00;margin-top:1px}
+.tag.loss{background:var(--scarlet)}
+.tag.loss .p{color:#fff}
+.tag.loss .m{color:#FFD3D9}
+.tag.thin{background:#FFEFC0}
+.tag.thin .m{color:var(--scarlet)}
 .item.off{opacity:.55}
 .item.off .tag{background:#E3E5EA}
 .item.off .tag .m{color:var(--muted)}
@@ -137,7 +158,7 @@ button{border:0;background:none;cursor:pointer}
 .hby{font-size:11px;color:var(--muted);margin-top:8px;word-break:break-all}
 
 /* ---------- fab ---------- */
-.fab{position:fixed;right:16px;bottom:calc(18px + var(--safe-b));z-index:30;
+.fab{position:fixed;right:16px;bottom:calc(78px + var(--safe-b));z-index:34;
   height:54px;padding:0 20px;border-radius:999px;background:var(--scarlet);color:#fff;
   font-weight:700;font-size:15px;display:flex;align-items:center;gap:8px;
   box-shadow:0 8px 22px rgba(215,38,61,.32)}
@@ -173,6 +194,8 @@ button{border:0;background:none;cursor:pointer}
   padding:4px 9px;border-radius:999px;letter-spacing:.02em}
 .badge.on{background:rgba(14,124,90,.12);color:var(--good)}
 .badge.offb{background:#EDEEF2;color:var(--muted)}
+.badge.warn{background:rgba(215,38,61,.10);color:var(--scarlet)}
+.badge.thin{background:#FFEFC0;color:#8A4A12}
 
 .sec{margin-top:20px}
 .sec-t{font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);
@@ -312,7 +335,7 @@ button{border:0;background:none;cursor:pointer}
 .install.on{display:inline-flex}
 
 /* toast */
-#toast{position:fixed;left:50%;bottom:calc(90px + var(--safe-b));transform:translate(-50%,20px);
+#toast{position:fixed;left:50%;bottom:calc(146px + var(--safe-b));transform:translate(-50%,20px);
   background:var(--ink-2);color:#fff;padding:12px 18px;border-radius:12px;font-size:13.5px;
   font-weight:600;z-index:80;opacity:0;pointer-events:none;transition:.22s;max-width:88vw;text-align:center}
 #toast.on{opacity:1;transform:translate(-50%,0)}
@@ -326,6 +349,7 @@ button{border:0;background:none;cursor:pointer}
     bottom:24px;max-height:86vh}
   .sheet.on{transform:translate(-50%,0)}
   .fab{right:calc(50% - 360px)}
+  .bnav{max-width:760px;left:50%;transform:translateX(-50%);border-radius:16px 16px 0 0}
 }
 @media (prefers-reduced-motion:reduce){
   *{animation-duration:.01ms!important;transition-duration:.01ms!important}
@@ -339,19 +363,13 @@ button{border:0;background:none;cursor:pointer}
 <header class="hdr">
   <div class="brand">
     <div>
-      <div class="eyebrow">Scarlett Grocery</div>
+      <button class="eyebrow" id="who" style="font:inherit;color:#8A91A3;text-align:left">Scarlett Grocery</button>
       <h1 id="pageTitle">Product Masterlist</h1>
     </div>
     <div class="counts">
       <div class="n mono" id="cTotal">—</div>
       <div class="l" id="cLabel">items</div>
     </div>
-  </div>
-
-  <div class="tabs" role="tablist">
-    <button class="tab" id="tabProducts" role="tab" aria-selected="true" aria-controls="paneProducts">Masterlist</button>
-    <button class="tab" id="tabHistory" role="tab" aria-selected="false" aria-controls="paneHistory">Price history</button>
-    <button class="tab" id="tabCalc" role="tab" aria-selected="false" aria-controls="paneCalc">Calculator</button>
   </div>
 
   <button class="install" id="installBtn">I-install ang app</button>
@@ -377,6 +395,8 @@ button{border:0;background:none;cursor:pointer}
     <button class="chip" data-f="active" aria-pressed="false">Active</button>
     <button class="chip" data-f="inactive" aria-pressed="false">Inactive</button>
     <button class="chip" data-f="nocost" aria-pressed="false">Walang puhunan</button>
+    <button class="chip" data-f="loss" aria-pressed="false">Lugi</button>
+    <button class="chip" data-f="thin" aria-pressed="false">Manipis na kita</button>
     <button class="chip" data-s="recent" aria-pressed="false">Bagong update</button>
   </div>
 
@@ -389,11 +409,11 @@ button{border:0;background:none;cursor:pointer}
   </div>
 </header>
 
-<div class="listmeta"><span id="shown">Kinukuha ang data…</span><button id="who" style="font:inherit;color:var(--muted);letter-spacing:.12em"></button></div>
+<div class="listmeta"><span id="shown">Kinukuha ang data…</span><button class="sync" id="syncChip"><span class="dot"></span><span id="syncTxt">—</span></button></div>
 
-<main class="pane" id="paneProducts" role="tabpanel" aria-labelledby="tabProducts"></main>
-<main class="pane" id="paneHistory" role="tabpanel" aria-labelledby="tabHistory" hidden></main>
-<main class="pane calc" id="paneCalc" role="tabpanel" aria-labelledby="tabCalc" hidden>
+<main class="pane" id="paneProducts" role="tabpanel" aria-labelledby="navProducts"></main>
+<main class="pane" id="paneHistory" role="tabpanel" aria-labelledby="navHistory" hidden></main>
+<main class="pane calc" id="paneCalc" role="tabpanel" aria-labelledby="navCalc" hidden>
 
   <div class="cstep"><span class="cnum">1</span> Ilagay ang presyo</div>
   <div class="cinp">
@@ -453,6 +473,21 @@ button{border:0;background:none;cursor:pointer}
     stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg> Bagong item
 </button>
 
+<nav class="bnav" role="tablist" aria-label="Mga seksyon">
+  <button id="navProducts" role="tab" aria-selected="true" aria-controls="paneProducts" data-tab="products">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M4 6h16M4 12h16M4 18h10"/></svg><span>Masterlist</span>
+  </button>
+  <button id="navHistory" role="tab" aria-selected="false" aria-controls="paneHistory" data-tab="history">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg><span>History</span>
+  </button>
+  <button id="navCalc" role="tab" aria-selected="false" aria-controls="paneCalc" data-tab="calc">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+      <rect x="5" y="3" width="14" height="18" rx="2.5"/><path d="M8.5 7.5h7M8.5 12h.01M12 12h.01M15.5 12h.01M8.5 16h.01M12 16h.01M15.5 16h.01"/></svg><span>Calculator</span>
+  </button>
+</nav>
+
 <div class="scrim" id="scrim"></div>
 
 <!-- DETAIL -->
@@ -502,9 +537,9 @@ button{border:0;background:none;cursor:pointer}
 
     <div class="field">
       <label for="fAlt">Alt barcode</label>
-      <textarea id="fAlt" spellcheck="false" placeholder="Pagitanan ng space ang bawat barcode"></textarea>
+      <textarea id="fAlt" spellcheck="false" placeholder="Paghiwalayin ng space ang bawat barcode"></textarea>
       <div class="inline" style="margin-top:8px">
-        <button class="mini" id="genAlt" style="flex:1">Buuin ang 0–9 variants</button>
+        <button class="mini" id="genAlt" style="flex:1">Gumawa ng 0–9 variants</button>
         <button class="mini" id="clrAlt" style="background:var(--paper);color:var(--ink)">Linisin</button>
       </div>
       <div class="hint" id="altCount">0 barcode</div>
@@ -608,7 +643,7 @@ var API = (function () {
       fail = fail || function () {};
       ok   = ok   || function () {};
       var m = MAP[fn];
-      if (!m) return fail({ message: 'Hindi kilalang tawag: ' + fn });
+      if (!m) return fail({ message: 'Hindi kilala ang tawag: ' + fn });
       if (!CONFIG.API_URL || !CONFIG.TOKEN) {
         return fail({ message: 'Hindi pa nakalagay ang API_URL at TOKEN sa itaas ng Index.html.' });
       }
@@ -666,7 +701,7 @@ function askWho() {
   var v = prompt('Sino ang gumagamit? (pangalan o email — ito ang lalabas sa UPDATED BY)', cur || '');
   if (v === null) return cur;
   v = String(v).trim().slice(0, 60);
-  if (v) { Who.set(v); S.user = v; $('who').textContent = v.split('@')[0]; }
+  if (v) { Who.set(v); S.user = v; $('who').title = 'Naka-set: ' + v; toast('Naka-set na si ' + v.split('@')[0] + '.'); }
   return v || cur;
 }
 
@@ -678,6 +713,20 @@ function money(n) {
 }
 function r2(n) { return Math.round((Number(n) || 0) * 100) / 100; }
 function peso(n) { return '\u20B1' + money(n); }
+
+/* kalusugan ng margin — para makita agad ang mali habang nag-scroll */
+var THIN_PCT = 5;
+function marginOf(p) {
+  if (!(p.cost > 0) || !(p.price > 0)) return null;
+  return r2((p.price / p.cost - 1) * 100);
+}
+function healthOf(p) {
+  var m = marginOf(p);
+  if (m === null) return '';
+  if (m < 0) return 'loss';
+  if (m < THIN_PCT) return 'thin';
+  return '';
+}
 function esc(s) {
   return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) {
     return { '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;' }[c];
@@ -736,9 +785,9 @@ function switchTab(name) {
 
   var prod = name === 'products', hist = name === 'history', calc = name === 'calc';
 
-  $('tabProducts').setAttribute('aria-selected', prod ? 'true' : 'false');
-  $('tabHistory').setAttribute('aria-selected',  hist ? 'true' : 'false');
-  $('tabCalc').setAttribute('aria-selected',     calc ? 'true' : 'false');
+  $('navProducts').setAttribute('aria-selected', prod ? 'true' : 'false');
+  $('navHistory').setAttribute('aria-selected',  hist ? 'true' : 'false');
+  $('navCalc').setAttribute('aria-selected',     calc ? 'true' : 'false');
 
   $('paneProducts').hidden = !prod;
   $('paneHistory').hidden  = !hist;
@@ -781,6 +830,8 @@ function applyFilters(keepPages) {
     if (S.filter === 'active'   && p.status !== 'ACTIVE') return false;
     if (S.filter === 'inactive' && p.status === 'ACTIVE') return false;
     if (S.filter === 'nocost'   && (p.cost > 0 && p.price > 0)) return false;
+    if (S.filter === 'loss'     && healthOf(p) !== 'loss') return false;
+    if (S.filter === 'thin'     && healthOf(p) !== 'thin') return false;
     var hay = (p.desc + ' ' + p.code + ' ' + p.alt).toLowerCase();
     for (var i = 0; i < terms.length; i++) if (hay.indexOf(terms[i]) === -1) return false;
     return true;
@@ -797,8 +848,8 @@ function applyFilters(keepPages) {
     renderProducts();
   }
   $('shown').textContent = S.view.length
-    ? S.view.length.toLocaleString() + ((S.q || S.filter !== 'all') ? ' na tugma' : ' na produkto')
-    : 'Walang tugma';
+    ? S.view.length.toLocaleString() + ((S.q || S.filter !== 'all') ? ' na match' : ' na produkto')
+    : 'Walang match';
 }
 function renderProducts() {
   var pane = $('paneProducts');
@@ -863,12 +914,12 @@ function applyHistFilters(keepPages) {
   }
   $('shown').textContent = S.histView.length
     ? S.histView.length.toLocaleString() + ' na pagbabago'
-    : 'Walang tugmang pagbabago';
+    : 'Walang match na pagbabago';
 }
 function renderHistory() {
   var pane = $('paneHistory');
   if (!S.histView.length) {
-    pane.innerHTML = '<div class="empty"><b>Walang naitalang pagbabago</b>' +
+    pane.innerHTML = '<div class="empty"><b>Wala pang na-record na pagbabago</b>' +
       (S.q || S.histFilter !== 'all'
         ? 'Subukan ang ibang filter o keyword.'
         : 'Lalabas dito ang bawat update sa cost o sell price.') + '</div>';
@@ -957,7 +1008,7 @@ function pickSupplier(cat) {
     'donnajhok': '+5 kung \u226457, 8% pataas', 'mixmagic88': '8% markup, may discount sa puhunan',
     'marby': 'puhunan \u221210%, benta = presyo', 'gardenia': 'puhunan = presyo, benta +10%',
     'mantika': 'may sariling divisor kada laki, benta +25%' }[cat] || '';
-  $('cSupNote').innerHTML = info ? '<b>Panuntunan:</b> ' + info : '';
+  $('cSupNote').innerHTML = info ? '<b>Paano kinuwenta:</b> ' + info : '';
 
   $('foldDisc').classList.toggle('open', cat === 'mixmagic88');
   $('foldSize').classList.toggle('open', cat === 'mantika');
@@ -1075,12 +1126,12 @@ $('cPrice').addEventListener('input', computePrice);
 $('cItems').addEventListener('input', computePrice);
 $('cDisc').addEventListener('input', computePrice);
 $('cReset').onclick = resetCalc;
-$('tabCalc').onclick = function () { switchTab('calc'); };
 
 /* ================= boot ================= */
 function boot() {
   S.user = Who.get();
-  $('who').textContent = S.user.split('@')[0];
+  $('who').title = 'Naka-set: ' + S.user;
+  paintSync();
 
   // agad na ipakita ang huling na-save, habang hinihintay ang network
   var cached = loadCache();
@@ -1096,6 +1147,7 @@ function boot() {
   API.call('getBootstrap', [], function (res) {
     var list = (res && res.products) || [];
     setOffline(false);
+    markSynced();
     var s = sigOf(list);
     if (s !== POLL.sig || !cached) {
       POLL.sig = s;
@@ -1120,7 +1172,25 @@ function boot() {
 }
 
 /* ============ silent refresh (naka-preserve ang scroll) ============ */
-var POLL = { sig:'', histSig:'', busy:false, every:20000, timer:null };
+var POLL = { sig:'', histSig:'', busy:false, every:20000, timer:null, last:0, offline:false };
+
+/* ---- kailan huling nag-sync ---- */
+function paintSync() {
+  var chip = $('syncChip'), txt = $('syncTxt');
+  if (!chip) return;
+  chip.className = 'sync';
+  if (POLL.busy)     { chip.classList.add('busy'); txt.textContent = 'Updating'; return; }
+  if (POLL.offline)  { chip.classList.add('off');  txt.textContent = 'Offline';      return; }
+  if (!POLL.last)    { txt.textContent = '\u2014'; return; }
+
+  var mins = Math.floor((Date.now() - POLL.last) / 60000);
+  if (mins >= 3) chip.classList.add('stale');
+  txt.textContent = mins < 1 ? 'Updated'
+                  : mins < 60 ? mins + ' min'
+                  : Math.floor(mins / 60) + ' hr';
+}
+function markSynced() { POLL.last = Date.now(); POLL.offline = false; paintSync(); }
+setInterval(paintSync, 15000);
 
 // magaan na hash para malaman kung may nagbago talaga
 function sigOf(list) {
@@ -1160,10 +1230,12 @@ function refreshNow(silent) {
   if (POLL.busy) return;
   if (silent && (document.hidden || sheetOpen())) return;
   POLL.busy = true;
+  paintSync();
 
   API.call('getBootstrap', [], function (res) {
     var list = (res && res.products) || [];
     setOffline(false);
+    markSynced();
     var s = sigOf(list);
     if (s !== POLL.sig) {
       POLL.sig = s;
@@ -1173,16 +1245,18 @@ function refreshNow(silent) {
         ? S.all.length.toLocaleString() : $('cTotal').textContent;
       if (S.tab === 'products') repaintKeepingScroll();
     }
-    if (S.tab === 'history' && S.histLoaded) refreshHistory(); else POLL.busy = false;
+    if (S.tab === 'history' && S.histLoaded) refreshHistory();
+    else { POLL.busy = false; paintSync(); }
   }, function () {
     POLL.busy = false;
-    if (!navigator.onLine) setOffline(true);
+    setOffline(true);
   });
 }
 
 function refreshHistory() {
   API.call('getAllHistory', [400], function (rows) {
     POLL.busy = false;
+    paintSync();
     rows = rows || [];
     var hs = histSigOf(rows);
     if (hs === POLL.histSig) return;
@@ -1192,7 +1266,7 @@ function refreshHistory() {
       $('cTotal').textContent = S.hist.length.toLocaleString();
       repaintKeepingScroll();
     }
-  }, function () { POLL.busy = false; });
+  }, function () { POLL.busy = false; paintSync(); });
 }
 
 function startPolling() {
@@ -1240,7 +1314,9 @@ function loadCache() {
 }
 
 function setOffline(on) {
+  POLL.offline = !!on;
   $('offbar').classList.toggle('on', !!on);
+  paintSync();
 }
 window.addEventListener('online',  function () { setOffline(false); refreshNow(true); });
 window.addEventListener('offline', function () { setOffline(true); });
@@ -1302,7 +1378,11 @@ function openDetail(code) {
     '<h3 class="d-name">' + esc(p.desc) + '</h3>' +
     '<div class="d-code">' + esc(p.code) + '</div>' +
     '<div style="margin-top:10px"><span class="badge ' + (p.status === 'ACTIVE' ? 'on' : 'offb') + '">' +
-      (p.status === 'ACTIVE' ? 'Active' : 'Inactive') + '</span></div>' +
+      (p.status === 'ACTIVE' ? 'Active' : 'Inactive') + '</span>' +
+      (healthOf(p) === 'loss'
+        ? ' <span class="badge warn">Lugi ng ' + peso(r2(p.cost - p.price)) + ' kada piraso</span>'
+        : healthOf(p) === 'thin'
+        ? ' <span class="badge thin">Manipis na kita</span>' : '') + '</div>' +
     '<div class="pricegrid">' +
       cell('Unit cost', peso(p.cost)) +
       cell('Markup', p.markup ? money(p.markup) + '%' : '—') +
@@ -1329,7 +1409,7 @@ function openDetail(code) {
 
   API.call('getHistory', [p.code], function (rows) {
     var box = $('histBox'); if (!box) return;
-    if (!rows.length) { box.textContent = 'Wala pang naitalang pagbabago.'; return; }
+    if (!rows.length) { box.textContent = 'Wala pang na-record na pagbabago.'; return; }
     box.className = 'hist';
     box.innerHTML = rows.map(function (h) {
       return '<div class="hrow"><div class="hd">' + when(h.date) + '</div>' +
@@ -1453,7 +1533,7 @@ function save() {
     closeSheets();
     applyFilters();
     toast(res.isNew ? 'Naidagdag sa masterlist.'
-                    : (res.logged ? 'Na-save at naitala sa price history.' : 'Na-save.'));
+                    : (res.logged ? 'Na-save at na-record sa price history.' : 'Na-save.'));
   }, function (e) {
     $('saveBtn').disabled = false; $('saveBtn').textContent = 'I-save';
     showErr(e.message || 'Hindi na-save. Subukan ulit.');
@@ -1485,7 +1565,7 @@ function openScanner() {
 
 function startCamera() {
   if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-    return showCamFallback('Walang camera access', 'Hindi sinusuportahan ng browser na ito ang live camera.');
+    return showCamFallback('Walang camera access', 'Hindi kaya ng browser na ito ang live camera.');
   }
   navigator.mediaDevices.getUserMedia({
     video: { facingMode: { ideal: 'environment' }, width: { ideal: 1280 }, height: { ideal: 960 } },
@@ -1572,7 +1652,7 @@ function loadZXing(cb) {
   if (window.ZXingBrowser && window.ZXingBrowser.BrowserMultiFormatReader) {
     return cb(window.ZXingBrowser.BrowserMultiFormatReader);
   }
-  scanHint('Inihahanda ang scanner…');
+  scanHint('Binubuksan ang scanner…');
   var sc = document.createElement('script');
   sc.src = 'https://unpkg.com/@zxing/browser@0.1.5/umd/zxing-browser.min.js';
   sc.onload = function () {
@@ -1619,14 +1699,14 @@ function decodeImageFile(file) {
   img.src = url;
 }
 
-/* --- tugmang produkto sa na-scan na code --- */
+/* --- hanapin ang produkto sa na-scan na code --- */
 function findByBarcode(raw) {
   var code = String(raw || '').replace(/\s+/g, '');
   if (!code) return null;
   var strip = code.replace(/^0+/, '');
   var hit = null;
 
-  // 1. eksaktong tugma sa item code o alt barcode
+  // 1. eksaktong match sa item code o alt barcode
   S.all.some(function (p) {
     var toks = [p.code].concat((p.alt || '').split(/\s+/)).filter(Boolean);
     for (var i = 0; i < toks.length; i++) {
@@ -1668,7 +1748,7 @@ function onScanned(raw) {
       $('searchBox').classList.add('has');
       applyFilters();
       SCAN.lastMiss = code;
-      toast('Walang tugma sa ' + code + '. Pindutin ang “Bagong item” para idagdag.', true);
+      toast('Walang match sa ' + code + '. Pindutin ang “Bagong item” para idagdag.', true);
     }
   }, 320);
 }
@@ -1689,8 +1769,10 @@ function closeSheets() {
 }
 
 /* ================= events ================= */
-$('tabProducts').onclick = function () { switchTab('products'); };
-$('tabHistory').onclick  = function () { switchTab('history'); };
+document.querySelector('.bnav').addEventListener('click', function (e) {
+  var b = e.target.closest('button[data-tab]');
+  if (b) switchTab(b.dataset.tab);
+});
 
 $('q').addEventListener('input', function () {
   S.q = this.value;
@@ -1748,6 +1830,11 @@ $('addBtn').onclick = function () {
   if (SCAN.lastMiss) { $('fCode').value = SCAN.lastMiss; SCAN.lastMiss = null; }
 };
 $('who').onclick = function () { askWho(); };
+$('syncChip').onclick = function () {
+  if (POLL.busy) return;
+  refreshNow(false);
+  toast('Kinukuha ang bagong data\u2026');
+};
 $('scanBtn').onclick = openScanner;
 $('scanClose').onclick = closeSheets;
 $('torchBtn').onclick = function () {
