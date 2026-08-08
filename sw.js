@@ -1,6 +1,6 @@
 /* Product Masterlist — service worker
    Taasan ang VERSION tuwing may bagong labas ng index.html. */
-const VERSION = 'pml-v6';
+const VERSION = 'pml-v8';
 const SHELL = [
   './',
   './index.html',
