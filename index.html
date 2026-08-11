@@ -156,6 +156,23 @@ button{border:0;background:none;cursor:pointer}
 .move .to.up{color:var(--good)}
 .move .to.dn{color:var(--scarlet)}
 .hby{font-size:11px;color:var(--muted);margin-top:8px;word-break:break-all}
+.act{display:inline-flex;align-items:center;gap:5px;font-size:9.5px;font-weight:800;
+  letter-spacing:.1em;text-transform:uppercase;padding:3px 8px;border-radius:999px;margin-right:7px}
+.act.added{background:rgba(14,124,90,.12);color:var(--good)}
+.act.deleted{background:rgba(215,38,61,.10);color:var(--scarlet)}
+.act.updated{background:var(--paper);color:var(--muted)}
+.snap{display:inline-flex;align-items:center;gap:6px;background:var(--paper);border-radius:9px;
+  padding:6px 9px;font-family:'JetBrains Mono',monospace;font-size:12px;margin-top:9px}
+.snap .k{font-family:'Archivo';font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;
+  font-weight:700;color:var(--muted)}
+
+.posnote{display:flex;gap:10px;background:#FFF6DC;border:1px solid #F3DFA2;border-radius:13px;
+  padding:12px 13px;margin:0 0 12px;font-size:12.5px;line-height:1.5;color:#6B5316}
+.posnote .bang{flex:none;font-size:15px;line-height:1.2}
+.posnote b{color:#4A3908}
+.formnote{background:#FFF6DC;border:1px solid #F3DFA2;border-radius:12px;padding:11px 12px;
+  font-size:12.5px;line-height:1.5;color:#6B5316;margin-bottom:14px}
+.formnote b{color:#4A3908}
 
 /* ---------- fab ---------- */
 .fab{position:fixed;right:16px;bottom:calc(78px + var(--safe-b));z-index:34;
@@ -406,6 +423,7 @@ button{border:0;background:none;cursor:pointer}
     <button class="chip" data-h="cost" aria-pressed="false">Nagbago ang cost</button>
     <button class="chip" data-h="up" aria-pressed="false">Tumaas ang sell</button>
     <button class="chip" data-h="down" aria-pressed="false">Bumaba ang sell</button>
+    <button class="chip" data-h="addel" aria-pressed="false">Dagdag at bura</button>
   </div>
 </header>
 
@@ -503,6 +521,7 @@ button{border:0;background:none;cursor:pointer}
   <div class="sheet-hd"><h2 id="edTitle">Bagong item</h2><button class="close" data-close>Kanselahin</button></div>
   <div class="sheet-bd">
     <div class="err" id="edErr"></div>
+    <div class="formnote" id="edNote"></div>
 
     <div class="field">
       <label for="fDesc">Item description</label>
@@ -901,6 +920,9 @@ function applyHistFilters(keepPages) {
     if (f === 'cost'  && r2(h.oldCost)  === r2(h.newCost))  return false;
     if (f === 'up'    && !(r2(h.newPrice) > r2(h.oldPrice))) return false;
     if (f === 'down'  && !(r2(h.newPrice) < r2(h.oldPrice))) return false;
+    var act = (h.action || 'UPDATED').toUpperCase();
+    if (f === 'addel' && act !== 'ADDED' && act !== 'DELETED') return false;
+    if ((f === 'price' || f === 'cost' || f === 'up' || f === 'down') && act !== 'UPDATED') return false;
     var hay = (h.desc + ' ' + h.code + ' ' + h.by).toLowerCase();
     for (var i = 0; i < terms.length; i++) if (hay.indexOf(terms[i]) === -1) return false;
     return true;
@@ -916,19 +938,23 @@ function applyHistFilters(keepPages) {
     ? S.histView.length.toLocaleString() + ' na pagbabago'
     : 'Walang match na pagbabago';
 }
+var POS_NOTE = '<div class="posnote"><span class="bang">\u26A0\uFE0F</span><span>' +
+  '<b>Paalala:</b> kapag may bagong item o binurang item sa POS, i-encode din dito sa app ' +
+  'para hindi maglihis ang dalawa.</span></div>';
+
 function renderHistory() {
   var pane = $('paneHistory');
   if (!S.histView.length) {
-    pane.innerHTML = '<div class="empty"><b>Wala pang na-record na pagbabago</b>' +
+    pane.innerHTML = POS_NOTE + '<div class="empty"><b>Wala pang na-record na pagbabago</b>' +
       (S.q || S.histFilter !== 'all'
         ? 'Subukan ang ibang filter o keyword.'
-        : 'Lalabas dito ang bawat update sa cost o sell price.') + '</div>';
+        : 'Lalabas dito ang bawat dagdag, bura, at palit ng presyo.') + '</div>';
     return;
   }
   var start = S.histPage * S.size;
   var slice = S.histView.slice(start, start + S.size);
   var lastDay = start > 0 ? dayKey(S.histView[start - 1].date) : null;
-  var html = '';
+  var html = start === 0 ? POS_NOTE : '';
   slice.forEach(function (h) {
     var d = dayKey(h.date);
     if (d !== lastDay) { html += '<div class="daylabel">' + esc(d) + '</div>'; lastDay = d; }
@@ -937,16 +963,37 @@ function renderHistory() {
   pane.insertAdjacentHTML('beforeend', html);
   S.histPage++;
 }
+var ACT_LABEL = { ADDED: 'Bagong item', DELETED: 'Binura', UPDATED: 'Palit presyo' };
+
+function actBadge(a) {
+  var key = (a || 'UPDATED').toUpperCase();
+  var cls = key === 'ADDED' ? 'added' : key === 'DELETED' ? 'deleted' : 'updated';
+  return '<span class="act ' + cls + '">' + (ACT_LABEL[key] || 'Palit presyo') + '</span>';
+}
+
+function snapshot(cost, price) {
+  var bits = [];
+  if (cost)  bits.push('<span class="k">Cost</span>' + peso(cost));
+  if (price) bits.push('<span class="k">Sell</span>' + peso(price));
+  return bits.length ? '<span class="snap">' + bits.join(' &nbsp; ') + '</span>' : '';
+}
+
+function histBody(h) {
+  var a = (h.action || 'UPDATED').toUpperCase();
+  if (a === 'ADDED')   return snapshot(h.newCost, h.newPrice);
+  if (a === 'DELETED') return snapshot(h.oldCost, h.oldPrice);
+  return '<span class="moves">' +
+    move('Cost', h.oldCost, h.newCost) +
+    move('Markup', h.oldMarkup, h.newMarkup, '%') +
+    move('Sell', h.oldPrice, h.newPrice) + '</span>';
+}
+
 function histCardHTML(h) {
   return '<button class="hcard" data-code="' + esc(h.code) + '">' +
     '<span class="top"><h4>' + esc(h.desc || '(walang pangalan)') + '</h4>' +
     '<span class="clock">' + clockOf(h.date) + '</span></span>' +
-    '<span class="sub">' + esc(h.code) + '</span>' +
-    '<span class="moves">' +
-      move('Cost', h.oldCost, h.newCost) +
-      move('Markup', h.oldMarkup, h.newMarkup, '%') +
-      move('Sell', h.oldPrice, h.newPrice) +
-    '</span>' +
+    '<span class="sub">' + actBadge(h.action) + esc(h.code) + '</span>' +
+    histBody(h) +
     '<span class="hby">' + esc(h.by || '—') + '</span></button>';
 }
 function move(label, a, b, suf) {
@@ -1413,11 +1460,9 @@ function openDetail(code) {
     box.className = 'hist';
     box.innerHTML = rows.map(function (h) {
       return '<div class="hrow"><div class="hd">' + when(h.date) + '</div>' +
-        '<div class="moves">' +
-          move('Cost', h.oldCost, h.newCost) +
-          move('Markup', h.oldMarkup, h.newMarkup, '%') +
-          move('Sell', h.oldPrice, h.newPrice) +
-        '</div><div class="hby">' + esc(h.by) + '</div></div>';
+        '<div style="margin-top:4px">' + actBadge(h.action) + '</div>' +
+        histBody(h) +
+        '<div class="hby">' + esc(h.by) + '</div></div>';
     }).join('');
   }, function () { var b = $('histBox'); if (b) b.textContent = 'Hindi makuha ang history.'; });
 
@@ -1440,13 +1485,16 @@ function toggle(p) {
   }, function (e) { toast(e.message || 'Hindi na-update.', true); });
 }
 function del(p) {
-  if (!confirm('Buburahin ang "' + p.desc + '" sa masterlist. Tuloy?')) return;
+  if (!confirm('Buburahin ang "' + p.desc + '" sa masterlist.\n\n' +
+               'Huwag kalimutang burahin din ito sa POS mo.\n\nTuloy?')) return;
   API.call('deleteProduct', [p.code], function () {
     S.all = S.all.filter(function (x) { return x.code !== p.code; });
     POLL.sig = sigOf(S.all);
+    saveCache(S.all);
+    S.histLoaded = false; POLL.histSig = '';
     $('cTotal').textContent = S.all.length.toLocaleString();
     closeSheets(); applyFilters();
-    toast('Nabura ang item.');
+    toast('Nabura ang item. Burahin din sa POS.');
   }, function (e) { toast(e.message || 'Hindi nabura.', true); });
 }
 
@@ -1455,6 +1503,9 @@ function openEditor(code) {
   var p = code ? findP(code) : null;
   S.editing = p ? p.code : null;
   $('edTitle').textContent = p ? 'I-edit ang item' : 'Bagong item';
+  $('edNote').innerHTML = p
+    ? '<b>Paalala:</b> kung papalitan mo rin ang presyo sa POS, siguraduhing pareho sila.'
+    : '<b>Paalala:</b> i-encode din ang bagong item na ito sa POS mo.';
   $('edErr').className = 'err';
   $('fDesc').value = p ? p.desc : '';
   $('fCode').value = p ? p.code : '';
@@ -1532,7 +1583,7 @@ function save() {
     if (res.logged) { S.histLoaded = false; POLL.histSig = ''; }
     closeSheets();
     applyFilters();
-    toast(res.isNew ? 'Naidagdag sa masterlist.'
+    toast(res.isNew ? 'Naidagdag. I-encode din sa POS mo.'
                     : (res.logged ? 'Na-save at na-record sa price history.' : 'Na-save.'));
   }, function (e) {
     $('saveBtn').disabled = false; $('saveBtn').textContent = 'I-save';
