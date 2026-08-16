@@ -512,10 +512,7 @@ button{border:0;background:none;cursor:pointer}
 <main class="pane calc" id="paneCalc" role="tabpanel" aria-labelledby="navCalc" hidden>
 
   <div class="bubrow">
-    <div>
-      <div class="t">Floating calculator</div>
-      <div class="s">Lumulutang na bilog na kayang gamitin kahit saang tab. Puwedeng hilahin at itago.</div>
-    </div>
+    <div class="t">Floating calculator</div>
     <button class="sw" id="bubToggle" aria-pressed="false" aria-label="Buksan ang floating calculator"></button>
   </div>
 
@@ -1419,7 +1416,17 @@ function calcKey(st, k) {
   }
 
   if (k === 'pct') {
-    st.cur = String(calcRound(parseFloat(st.cur) / 100));
+    var v = parseFloat(st.cur) || 0;
+    // Ang % ay sumusunod sa nakabinbing operasyon:
+    //   123 + 8%  ->  8% NG 123 = 9.84   (kaya 132.84 pagka-=)
+    //   200 * 10% ->  0.10 lang
+    if (st.op !== null && st.prev !== null && !st.fresh) {
+      st.cur = (st.op === '+' || st.op === '-')
+        ? String(calcRound(st.prev * v / 100))
+        : String(calcRound(v / 100));
+    } else {
+      st.cur = String(calcRound(v / 100));
+    }
     st.fresh = false;
     return st;
   }
@@ -1480,9 +1487,14 @@ function bubSave() {
   } catch (e) {}
 }
 function bubLoad() {
+  BUB.shown = true;                     // default: bukas agad
   try {
     var o = JSON.parse(localStorage.getItem(BUB_KEY) || 'null');
-    if (o) { BUB.y = o.y || 0; BUB.side = o.side || 'right'; BUB.shown = !!o.shown; }
+    if (o) {
+      BUB.y = o.y || 0;
+      BUB.side = o.side || 'right';
+      if (typeof o.shown === 'boolean') BUB.shown = o.shown;   // igalang ang pinili niya
+    }
   } catch (e) {}
 }
 function bubClampY(y) {
