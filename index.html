@@ -349,6 +349,72 @@ button{border:0;background:none;cursor:pointer}
 
 .calcnote{font-size:11.5px;color:var(--muted);text-align:center;margin:18px 0 4px;line-height:1.5}
 
+/* ---------- floating calculator (chat head) ---------- */
+.bub{position:fixed;z-index:45;width:54px;height:54px;border-radius:50%;
+  background:var(--ink);color:#fff;display:flex;align-items:center;justify-content:center;
+  box-shadow:0 6px 20px rgba(10,12,16,.34);touch-action:none;user-select:none;
+  border:2px solid rgba(255,255,255,.14)}
+.bub svg{width:23px;height:23px;stroke-width:2;pointer-events:none}
+.bub.drag{transition:none;transform:scale(1.08);box-shadow:0 10px 28px rgba(10,12,16,.45)}
+.bub.snap{transition:left .22s cubic-bezier(.32,.72,0,1),top .22s cubic-bezier(.32,.72,0,1)}
+.bub.hidden{display:none}
+.bub.doomed{background:var(--scarlet);transform:scale(.86)}
+.bub .dot{position:absolute;top:-2px;right:-2px;min-width:19px;height:19px;padding:0 5px;
+  border-radius:999px;background:var(--tag);color:#4A3908;font-family:'JetBrains Mono',monospace;
+  font-size:9.5px;font-weight:700;display:none;align-items:center;justify-content:center;
+  border:2px solid var(--card)}
+.bub.hasval .dot{display:flex}
+
+.dropzone{position:fixed;left:50%;transform:translateX(-50%) scale(.7);
+  bottom:calc(78px + var(--safe-b));z-index:44;width:62px;height:62px;border-radius:50%;
+  background:rgba(215,38,61,.14);border:2px dashed var(--scarlet);color:var(--scarlet);
+  display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;
+  transition:opacity .18s,transform .18s}
+.dropzone.on{opacity:1;transform:translateX(-50%) scale(1)}
+.dropzone.hot{background:var(--scarlet);color:#fff;border-style:solid;
+  transform:translateX(-50%) scale(1.16)}
+
+.calcpop{position:fixed;z-index:46;width:min(292px,calc(100vw - 24px));background:var(--card);
+  border:1px solid var(--line);border-radius:18px;box-shadow:0 14px 44px rgba(10,12,16,.26);
+  padding:12px;display:none;transform-origin:bottom right}
+.calcpop.on{display:block;animation:pop .16s ease-out}
+@keyframes pop{from{opacity:0;transform:scale(.94)}to{opacity:1;transform:scale(1)}}
+.cp-hd{display:flex;align-items:center;justify-content:space-between;gap:8px;
+  padding:0 4px 8px;font-size:10px;letter-spacing:.14em;text-transform:uppercase;
+  font-weight:700;color:var(--muted)}
+.cp-hd button{color:var(--muted);font-size:17px;line-height:1;padding:2px 5px}
+.cp-scr{background:var(--paper);border-radius:12px;padding:10px 13px;text-align:right;margin-bottom:9px}
+.cp-sub{font-family:'JetBrains Mono',monospace;font-size:11.5px;color:var(--muted);
+  min-height:15px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cp-out{font-family:'JetBrains Mono',monospace;font-weight:700;font-size:26px;
+  letter-spacing:-.04em;line-height:1.15;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cp-pad{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+.cp-pad button{height:46px;border-radius:12px;background:var(--paper);font-size:17px;
+  font-weight:700;font-family:'JetBrains Mono',monospace;display:flex;
+  align-items:center;justify-content:center}
+.cp-pad button:active{background:#E3E5EA}
+.cp-pad .fn{background:#E9EBEF;color:var(--ink);font-size:15px}
+.cp-pad .op{background:var(--ink);color:#fff;font-size:18px}
+.cp-pad .op.armed{background:var(--scarlet)}
+.cp-pad .eq{background:var(--tag);color:#4A3908}
+.cp-pad .wide{grid-column:span 2}
+.cp-ft{display:flex;gap:6px;margin-top:7px}
+.cp-ft button{flex:1;height:36px;border-radius:10px;background:var(--paper);
+  border:1px solid var(--line);font-size:11.5px;font-weight:700;color:var(--muted)}
+
+/* toggle sa calculator tab */
+.bubrow{display:flex;align-items:center;justify-content:space-between;gap:12px;
+  background:var(--card);border:1px solid var(--line);border-radius:13px;padding:12px 14px;
+  margin-bottom:4px}
+.bubrow .t{font-size:13px;font-weight:700}
+.bubrow .s{font-size:11.5px;color:var(--muted);margin-top:2px;line-height:1.4}
+.sw{flex:none;width:46px;height:27px;border-radius:999px;background:#D6D9E0;position:relative;
+  transition:background .18s}
+.sw::after{content:"";position:absolute;top:3px;left:3px;width:21px;height:21px;border-radius:50%;
+  background:#fff;transition:transform .18s;box-shadow:0 1px 3px rgba(0,0,0,.2)}
+.sw[aria-pressed="true"]{background:var(--good)}
+.sw[aria-pressed="true"]::after{transform:translateX(19px)}
+
 /* offline banner */
 .offbar{position:fixed;left:0;right:0;top:0;z-index:60;background:var(--scarlet);color:#fff;
   font-size:12.5px;font-weight:700;text-align:center;padding:7px 12px;
@@ -444,6 +510,14 @@ button{border:0;background:none;cursor:pointer}
 <main class="pane" id="paneProducts" role="tabpanel" aria-labelledby="navProducts"></main>
 <main class="pane" id="paneHistory" role="tabpanel" aria-labelledby="navHistory" hidden></main>
 <main class="pane calc" id="paneCalc" role="tabpanel" aria-labelledby="navCalc" hidden>
+
+  <div class="bubrow">
+    <div>
+      <div class="t">Floating calculator</div>
+      <div class="s">Lumulutang na bilog na kayang gamitin kahit saang tab. Puwedeng hilahin at itago.</div>
+    </div>
+    <button class="sw" id="bubToggle" aria-pressed="false" aria-label="Buksan ang floating calculator"></button>
+  </div>
 
   <div class="cstep"><span class="cnum">1</span> Ilagay ang presyo</div>
   <div class="cinp">
@@ -610,6 +684,45 @@ button{border:0;background:none;cursor:pointer}
     </div>
 
     <input type="file" id="snapInput" accept="image/*" capture="environment" hidden>
+  </div>
+</section>
+
+<button class="bub hidden" id="bub" aria-label="Floating calculator">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+    <rect x="5" y="3" width="14" height="18" rx="2.5"/>
+    <path d="M8.5 7.5h7M8.5 12h.01M12 12h.01M15.5 12h.01M8.5 16h.01M12 16h.01M15.5 16h.01"/></svg>
+  <span class="dot" id="bubDot"></span>
+</button>
+
+<div class="dropzone" id="dropZone" aria-hidden="true">
+  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+    stroke-width="2.4" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>
+</div>
+
+<section class="calcpop" id="calcPop" role="dialog" aria-label="Simpleng calculator">
+  <div class="cp-hd"><span>Calculator</span><button id="cpClose" aria-label="Isara">&times;</button></div>
+  <div class="cp-scr">
+    <div class="cp-sub" id="cpSub"></div>
+    <div class="cp-out" id="cpOut">0</div>
+  </div>
+  <div class="cp-pad" id="cpPad">
+    <button class="fn" data-k="clear">C</button>
+    <button class="fn" data-k="sign">+/-</button>
+    <button class="fn" data-k="pct">%</button>
+    <button class="op" data-k="/">&divide;</button>
+    <button data-k="7">7</button><button data-k="8">8</button><button data-k="9">9</button>
+    <button class="op" data-k="*">&times;</button>
+    <button data-k="4">4</button><button data-k="5">5</button><button data-k="6">6</button>
+    <button class="op" data-k="-">&minus;</button>
+    <button data-k="1">1</button><button data-k="2">2</button><button data-k="3">3</button>
+    <button class="op" data-k="+">+</button>
+    <button class="wide" data-k="0">0</button>
+    <button data-k="dot">.</button>
+    <button class="eq" data-k="eq">=</button>
+  </div>
+  <div class="cp-ft">
+    <button id="cpBack">&#9003; Bura</button>
+    <button id="cpCopy">Kopyahin</button>
   </div>
 </section>
 
@@ -1250,6 +1363,280 @@ $('cPrice').addEventListener('input', computePrice);
 $('cItems').addEventListener('input', computePrice);
 $('cDisc').addEventListener('input', computePrice);
 $('cReset').onclick = resetCalc;
+
+/* ================= floating calculator (chat head) ================= */
+var BUB = {
+  x: 0, y: 0, side: 'right', shown: false, open: false,
+  dragging: false, moved: false, startT: 0, offX: 0, offY: 0,
+  SIZE: 54, PAD: 12
+};
+var BUB_KEY = 'pml_bubble_v1';
+
+/* ---- engine ng calculator (hiwalay sa UI para malinis subukan) ---- */
+function calcEngine() {
+  return { cur: '0', prev: null, op: null, fresh: true, err: false };
+}
+function calcRound(n) {
+  if (!isFinite(n)) return n;
+  return Math.round(n * 1e10) / 1e10;
+}
+function calcApply(a, op, b) {
+  if (op === '+') return a + b;
+  if (op === '-') return a - b;
+  if (op === '*') return a * b;
+  if (op === '/') return b === 0 ? NaN : a / b;
+  return b;
+}
+function calcKey(st, k) {
+  if (st.err && k !== 'clear') return st;
+
+  if (k === 'clear') return calcEngine();
+
+  if (/^[0-9]$/.test(k)) {
+    if (st.fresh) { st.cur = k; st.fresh = false; }
+    else if (st.cur === '0') st.cur = k;
+    else if (st.cur.replace(/[-.]/g, '').length < 12) st.cur += k;
+    return st;
+  }
+
+  if (k === 'dot') {
+    if (st.fresh) { st.cur = '0.'; st.fresh = false; }
+    else if (st.cur.indexOf('.') === -1) st.cur += '.';
+    return st;
+  }
+
+  if (k === 'back') {
+    if (st.fresh) return st;
+    st.cur = st.cur.length > 1 ? st.cur.slice(0, -1) : '0';
+    if (st.cur === '-' || st.cur === '') st.cur = '0';
+    return st;
+  }
+
+  if (k === 'sign') {
+    if (st.cur === '0') return st;
+    st.cur = st.cur.charAt(0) === '-' ? st.cur.slice(1) : '-' + st.cur;
+    return st;
+  }
+
+  if (k === 'pct') {
+    st.cur = String(calcRound(parseFloat(st.cur) / 100));
+    st.fresh = false;
+    return st;
+  }
+
+  if (k === '+' || k === '-' || k === '*' || k === '/') {
+    if (st.op !== null && !st.fresh) {
+      var r = calcApply(st.prev, st.op, parseFloat(st.cur));
+      if (!isFinite(r)) { st.err = true; st.cur = 'Error'; return st; }
+      st.cur = String(calcRound(r));
+      st.prev = calcRound(r);
+    } else {
+      st.prev = parseFloat(st.cur);
+    }
+    st.op = k;
+    st.fresh = true;
+    return st;
+  }
+
+  if (k === 'eq') {
+    if (st.op === null || st.prev === null) { st.fresh = true; return st; }
+    var v = calcApply(st.prev, st.op, parseFloat(st.cur));
+    if (!isFinite(v)) { st.err = true; st.cur = 'Error'; st.op = null; st.prev = null; return st; }
+    st.cur = String(calcRound(v));
+    st.prev = null; st.op = null; st.fresh = true;
+    return st;
+  }
+
+  return st;
+}
+function calcShow(v) {
+  if (v === 'Error') return v;
+  var neg = v.charAt(0) === '-';
+  var body = neg ? v.slice(1) : v;
+  var parts = body.split('.');
+  var whole = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+  return (neg ? '-' : '') + whole + (parts.length > 1 ? '.' + parts[1] : '');
+}
+
+var CE = calcEngine();
+var OP_SIGN = { '+':'+', '-':'\u2212', '*':'\u00D7', '/':'\u00F7' };
+
+function paintCalc() {
+  $('cpOut').textContent = calcShow(CE.cur);
+  $('cpSub').textContent = (CE.op && CE.prev !== null)
+    ? calcShow(String(CE.prev)) + ' ' + OP_SIGN[CE.op] : '';
+  Array.prototype.forEach.call($('cpPad').querySelectorAll('.op'), function (b) {
+    b.classList.toggle('armed', CE.fresh && CE.op === b.dataset.k);
+  });
+  var live = !(CE.cur === '0' && CE.op === null);
+  $('bub').classList.toggle('hasval', live);
+  $('bubDot').textContent = live ? (CE.cur === 'Error' ? '!' : calcShow(CE.cur).slice(0, 6)) : '';
+}
+
+/* ---- posisyon ---- */
+function bubSave() {
+  try {
+    localStorage.setItem(BUB_KEY, JSON.stringify({ y: BUB.y, side: BUB.side, shown: BUB.shown }));
+  } catch (e) {}
+}
+function bubLoad() {
+  try {
+    var o = JSON.parse(localStorage.getItem(BUB_KEY) || 'null');
+    if (o) { BUB.y = o.y || 0; BUB.side = o.side || 'right'; BUB.shown = !!o.shown; }
+  } catch (e) {}
+}
+function bubClampY(y) {
+  var top = 70;
+  var bottom = window.innerHeight - BUB.SIZE - 84;
+  return Math.max(top, Math.min(bottom, y));
+}
+function bubPlace(animate) {
+  var el = $('bub');
+  el.classList.toggle('snap', !!animate);
+  BUB.y = bubClampY(BUB.y);
+  BUB.x = BUB.side === 'left'
+    ? BUB.PAD
+    : window.innerWidth - BUB.SIZE - BUB.PAD;
+  el.style.left = BUB.x + 'px';
+  el.style.top  = BUB.y + 'px';
+  if (BUB.open) placePop();
+}
+function placePop() {
+  var pop = $('calcPop');
+  var w = pop.offsetWidth || 292;
+  var h = pop.offsetHeight || 330;
+  var left = BUB.side === 'left' ? BUB.PAD : window.innerWidth - w - BUB.PAD;
+  var top  = BUB.y + BUB.SIZE + 10;
+  if (top + h > window.innerHeight - 78) top = Math.max(70, BUB.y - h - 10);
+  if (top + h > window.innerHeight - 78) top = Math.max(70, window.innerHeight - h - 84);
+  pop.style.left = Math.max(12, left) + 'px';
+  pop.style.top  = top + 'px';
+}
+
+function bubShow(on, quiet) {
+  BUB.shown = !!on;
+  $('bub').classList.toggle('hidden', !BUB.shown);
+  $('bubToggle').setAttribute('aria-pressed', BUB.shown ? 'true' : 'false');
+  if (!BUB.shown) popOpen(false);
+  else bubPlace(false);
+  bubSave();
+  if (!quiet) toast(BUB.shown ? 'Nasa gilid na ang calculator.'
+                              : 'Nakatago. Buksan ulit sa Calculator tab.');
+}
+function popOpen(on) {
+  BUB.open = !!on;
+  $('calcPop').classList.toggle('on', BUB.open);
+  if (BUB.open) { placePop(); paintCalc(); }
+}
+
+/* ---- drag ---- */
+(function () {
+  var el = $('bub'), zone = $('dropZone');
+
+  function hotZone(cx, cy) {
+    var r = zone.getBoundingClientRect();
+    var dx = cx - (r.left + r.width / 2);
+    var dy = cy - (r.top + r.height / 2);
+    return Math.sqrt(dx * dx + dy * dy) < 62;
+  }
+
+  el.addEventListener('pointerdown', function (e) {
+    BUB.dragging = true; BUB.moved = false; BUB.startT = Date.now();
+    var r = el.getBoundingClientRect();
+    BUB.offX = e.clientX - r.left;
+    BUB.offY = e.clientY - r.top;
+    el.setPointerCapture(e.pointerId);
+    el.classList.add('drag');
+    el.classList.remove('snap');
+  });
+
+  el.addEventListener('pointermove', function (e) {
+    if (!BUB.dragging) return;
+    var nx = e.clientX - BUB.offX;
+    var ny = e.clientY - BUB.offY;
+    if (!BUB.moved) {
+      var r0 = el.getBoundingClientRect();
+      if (Math.abs(e.clientX - (r0.left + BUB.offX)) > 6 ||
+          Math.abs(e.clientY - (r0.top + BUB.offY)) > 6) {
+        BUB.moved = true;
+        popOpen(false);
+        zone.classList.add('on');
+      }
+    }
+    if (!BUB.moved) return;
+    el.style.left = Math.max(2, Math.min(window.innerWidth - BUB.SIZE - 2, nx)) + 'px';
+    el.style.top  = Math.max(2, Math.min(window.innerHeight - BUB.SIZE - 2, ny)) + 'px';
+    var hot = hotZone(e.clientX, e.clientY);
+    zone.classList.toggle('hot', hot);
+    el.classList.toggle('doomed', hot);
+  });
+
+  function endDrag(e) {
+    if (!BUB.dragging) return;
+    BUB.dragging = false;
+    el.classList.remove('drag', 'doomed');
+    zone.classList.remove('on', 'hot');
+
+    if (!BUB.moved && Date.now() - BUB.startT < 600) {   // tap
+      popOpen(!BUB.open);
+      return;
+    }
+    if (e && hotZone(e.clientX, e.clientY)) { bubShow(false); return; }
+
+    var r = el.getBoundingClientRect();
+    BUB.side = (r.left + BUB.SIZE / 2) < window.innerWidth / 2 ? 'left' : 'right';
+    BUB.y = r.top;
+    bubPlace(true);
+    bubSave();
+  }
+  el.addEventListener('pointerup', endDrag);
+  el.addEventListener('pointercancel', endDrag);
+})();
+
+/* ---- pad ---- */
+$('cpPad').addEventListener('click', function (e) {
+  var b = e.target.closest('button[data-k]');
+  if (!b) return;
+  CE = calcKey(CE, b.dataset.k);
+  paintCalc();
+  if (navigator.vibrate) navigator.vibrate(8);
+});
+$('cpBack').onclick  = function () { CE = calcKey(CE, 'back'); paintCalc(); };
+$('cpClose').onclick = function () { popOpen(false); };
+$('cpCopy').onclick  = function () {
+  var v = CE.cur;
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(v).then(function () { toast('Nakopya: ' + calcShow(v)); },
+                                          function () { toast('Hindi makopya.', true); });
+  } else { toast('Hindi kayang kumopya dito.', true); }
+};
+$('bubToggle').onclick = function () { bubShow(!BUB.shown); };
+
+document.addEventListener('keydown', function (e) {
+  if (!BUB.open) return;
+  var k = e.key;
+  var map = { 'Enter':'eq', '=':'eq', 'Escape':'clear', 'Backspace':'back',
+              '.':'dot', ',':'dot', '%':'pct',
+              '+':'+', '-':'-', '*':'*', 'x':'*', '/':'/' };
+  var send = /^[0-9]$/.test(k) ? k : map[k];
+  if (!send) return;
+  e.preventDefault();
+  CE = calcKey(CE, send);
+  paintCalc();
+});
+
+window.addEventListener('resize', function () { if (BUB.shown) bubPlace(false); });
+
+// isara ang pop kapag may bumukas na sheet
+(function () {
+  var oldOpen = openSheet;
+  openSheet = function (id) { popOpen(false); oldOpen(id); };
+})();
+
+bubLoad();
+if (!BUB.y) BUB.y = Math.round(window.innerHeight * 0.55);
+bubShow(BUB.shown, true);
+paintCalc();
 
 /* ================= boot ================= */
 function boot() {
