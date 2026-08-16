@@ -49,6 +49,15 @@ button{border:0;background:none;cursor:pointer}
 .brand > div:first-child{min-width:0;flex:1}
 .brand h1{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .hdr.compact .brand{max-height:0;opacity:0;margin-bottom:0}
+.brandtop{display:flex;align-items:center;gap:9px;min-width:0}
+.netpill{display:inline-flex;align-items:center;gap:5px;flex:none;
+  background:#1E222B;border-radius:999px;padding:3px 9px 3px 7px;
+  font-size:9.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#8A91A3}
+.netpill .led{width:6px;height:6px;border-radius:50%;background:var(--good);flex:none}
+.netpill.busy .led{background:var(--tag);animation:blip 1s infinite}
+.netpill.busy{color:#E6C36A}
+.netpill.offline .led{background:var(--scarlet)}
+.netpill.offline{color:#F0909C}
 .eyebrow{display:block;font-size:10px;letter-spacing:.18em;text-transform:uppercase;
   color:#8A91A3;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
   max-width:100%;padding:0}
@@ -380,7 +389,10 @@ button{border:0;background:none;cursor:pointer}
 <header class="hdr">
   <div class="brand">
     <div>
-      <button class="eyebrow" id="who" style="font:inherit;color:#8A91A3;text-align:left">Scarlett Grocery</button>
+      <div class="brandtop">
+        <button class="eyebrow" id="who" style="font:inherit;color:#8A91A3;text-align:left">Scarlett Grocery</button>
+        <span class="netpill" id="netPill"><span class="led"></span><span id="netTxt">Online</span></span>
+      </div>
       <h1 id="pageTitle">Product Masterlist</h1>
     </div>
     <div class="counts">
@@ -626,8 +638,29 @@ var CONFIG = {
 };
 
 /* ============== backend bridge (fetch papuntang Apps Script) ============== */
+var NET = {
+  attempts: 3,          // ilang beses susubukan bago sumuko
+  baseDelay: 700,       // unang hintay bago ulitin
+  timeout: 20000,       // sumuko kung lampas dito ang isang request
+  state: 'idle'         // idle | busy | offline
+};
+
+function opId_() {
+  return Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 10);
+}
+
+function sleep_(ms) {
+  return new Promise(function (r) { setTimeout(r, ms); });
+}
+
+/* Sandaling network hiccup = puwedeng ulitin. Business error = hindi. */
+function retriable_(err) {
+  if (!err) return false;
+  if (err.fatal) return false;           // maling token, duplicate code, atbp.
+  return true;
+}
+
 var API = (function () {
-  // action name + method kada tawag
   var MAP = {
     getBootstrap:  { action:'bootstrap',  method:'GET'  },
     getAllHistory: { action:'allHistory', method:'GET'  },
@@ -647,14 +680,63 @@ var API = (function () {
     return p;
   }
 
-  function query(action, p) {
+  function query(action, p, op) {
     var q = ['action=' + encodeURIComponent(action),
              'token='  + encodeURIComponent(CONFIG.TOKEN),
              'user='   + encodeURIComponent(S.user || '')];
+    if (op) q.push('opId=' + encodeURIComponent(op));
     for (var k in p) if (p[k] !== undefined && p[k] !== null) {
       q.push(k + '=' + encodeURIComponent(p[k]));
     }
     return CONFIG.API_URL + '?' + q.join('&');
+  }
+
+  /* Isang subok lang. Nagbabalik ng Promise ng data, o nag-throw. */
+  function attempt(m, p, op) {
+    var ctl = (typeof AbortController !== 'undefined') ? new AbortController() : null;
+    var timer = setTimeout(function () { if (ctl) ctl.abort(); }, NET.timeout);
+    var req;
+
+    if (m.method === 'GET') {
+      req = fetch(query(m.action, p, op),
+        { method:'GET', redirect:'follow', signal: ctl ? ctl.signal : undefined });
+    } else {
+      var body = { action:m.action, token:CONFIG.TOKEN, user:S.user || '', opId:op };
+      for (var k in p) body[k] = p[k];
+      req = fetch(CONFIG.API_URL, {
+        method:'POST', redirect:'follow',
+        headers:{ 'Content-Type':'text/plain;charset=utf-8' },
+        body: JSON.stringify(body),
+        signal: ctl ? ctl.signal : undefined
+      });
+    }
+
+    return req
+      .then(function (r) { return r.text(); })
+      .then(function (txt) {
+        clearTimeout(timer);
+        var res;
+        try { res = JSON.parse(txt); }
+        catch (e) {
+          // HTML na sagot = login page o mali ang URL — ulitin, baka pansamantala
+          var e1 = new Error('Hindi JSON ang sagot ng server.');
+          throw e1;
+        }
+        if (!res.ok) {
+          var e2 = new Error(res.error || 'May mali sa server.');
+          e2.fatal = !res.busy;        // 'busy' lang ang puwedeng ulitin
+          throw e2;
+        }
+        return res;
+      })
+      .catch(function (e) {
+        clearTimeout(timer);
+        if (e && e.name === 'AbortError') {
+          var e3 = new Error('Na-timeout ang request.');
+          throw e3;
+        }
+        throw e;
+      });
   }
 
   return {
@@ -664,39 +746,34 @@ var API = (function () {
       var m = MAP[fn];
       if (!m) return fail({ message: 'Hindi kilala ang tawag: ' + fn });
       if (!CONFIG.API_URL || !CONFIG.TOKEN) {
-        return fail({ message: 'Hindi pa nakalagay ang API_URL at TOKEN sa itaas ng Index.html.' });
+        return fail({ message: 'Hindi pa nakalagay ang API_URL at TOKEN sa itaas ng index.html.' });
       }
-      args = args || [];
-      var p = params(fn, args);
-      var req;
 
-      if (m.method === 'GET') {
-        req = fetch(query(m.action, p), { method: 'GET', redirect: 'follow' });
-      } else {
-        // text/plain = simple request, kaya walang CORS preflight na hahadlang
-        var body = { action: m.action, token: CONFIG.TOKEN, user: S.user || '' };
-        for (var k in p) body[k] = p[k];
-        req = fetch(CONFIG.API_URL, {
-          method: 'POST',
-          redirect: 'follow',
-          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-          body: JSON.stringify(body)
+      var p  = params(fn, args || []);
+      var op = (m.method === 'POST') ? opId_() : '';   // parehong opId sa lahat ng subok
+      var tries = 0;
+
+      function go() {
+        tries++;
+        attempt(m, p, op).then(function (res) {
+          NET.state = 'idle';
+          ok(res.data, { replayed: !!res.replayed, tries: tries });
+        }).catch(function (e) {
+          var more = tries < NET.attempts && retriable_(e);
+          if (!more) {
+            NET.state = navigator.onLine ? 'idle' : 'offline';
+            paintNet();
+            return fail({ message: e && e.message ? e.message : 'Walang koneksyon sa server.',
+                          fatal: !!(e && e.fatal), tries: tries });
+          }
+          // exponential backoff na may kaunting jitter
+          var wait = NET.baseDelay * Math.pow(2, tries - 1) + Math.floor(Math.random() * 300);
+          NET.state = 'busy';
+          paintNet();
+          sleep_(wait).then(go);
         });
       }
-
-      req.then(function (r) { return r.text(); })
-         .then(function (txt) {
-           var res;
-           try { res = JSON.parse(txt); }
-           catch (e) {
-             throw new Error('Hindi JSON ang sagot. Tingnan kung tama ang /exec URL at naka-"Anyone" ang access.');
-           }
-           if (!res.ok) throw new Error(res.error || 'May mali sa server.');
-           ok(res.data);
-         })
-         .catch(function (e) {
-           fail({ message: e && e.message ? e.message : 'Walang koneksyon sa server.' });
-         });
+      go();
     }
   };
 })();
@@ -1179,6 +1256,7 @@ function boot() {
   S.user = Who.get();
   $('who').title = 'Naka-set: ' + S.user;
   paintSync();
+  paintNet();
 
   // agad na ipakita ang huling na-save, habang hinihintay ang network
   var cached = loadCache();
@@ -1221,6 +1299,16 @@ function boot() {
 /* ============ silent refresh (naka-preserve ang scroll) ============ */
 var POLL = { sig:'', histSig:'', busy:false, every:20000, timer:null, last:0, offline:false };
 
+/* ---- estado ng koneksyon sa topbar ---- */
+function paintNet() {
+  var pill = $('netPill'), txt = $('netTxt');
+  if (!pill) return;
+  var st = (!navigator.onLine || POLL.offline) ? 'offline'
+         : (NET.state === 'busy' || POLL.busy) ? 'busy' : 'online';
+  pill.className = 'netpill' + (st === 'online' ? '' : ' ' + st);
+  txt.textContent = st === 'offline' ? 'Offline' : st === 'busy' ? 'Syncing' : 'Online';
+}
+
 /* ---- kailan huling nag-sync ---- */
 function paintSync() {
   var chip = $('syncChip'), txt = $('syncTxt');
@@ -1236,8 +1324,8 @@ function paintSync() {
                   : mins < 60 ? mins + ' min'
                   : Math.floor(mins / 60) + ' hr';
 }
-function markSynced() { POLL.last = Date.now(); POLL.offline = false; paintSync(); }
-setInterval(paintSync, 15000);
+function markSynced() { POLL.last = Date.now(); POLL.offline = false; paintSync(); paintNet(); }
+setInterval(function () { paintSync(); paintNet(); }, 15000);
 
 // magaan na hash para malaman kung may nagbago talaga
 function sigOf(list) {
@@ -1278,6 +1366,7 @@ function refreshNow(silent) {
   if (silent && (document.hidden || sheetOpen())) return;
   POLL.busy = true;
   paintSync();
+  paintNet();
 
   API.call('getBootstrap', [], function (res) {
     var list = (res && res.products) || [];
@@ -1293,7 +1382,7 @@ function refreshNow(silent) {
       if (S.tab === 'products') repaintKeepingScroll();
     }
     if (S.tab === 'history' && S.histLoaded) refreshHistory();
-    else { POLL.busy = false; paintSync(); }
+    else { POLL.busy = false; paintSync(); paintNet(); }
   }, function () {
     POLL.busy = false;
     setOffline(true);
@@ -1304,6 +1393,7 @@ function refreshHistory() {
   API.call('getAllHistory', [400], function (rows) {
     POLL.busy = false;
     paintSync();
+    paintNet();
     rows = rows || [];
     var hs = histSigOf(rows);
     if (hs === POLL.histSig) return;
@@ -1313,7 +1403,7 @@ function refreshHistory() {
       $('cTotal').textContent = S.hist.length.toLocaleString();
       repaintKeepingScroll();
     }
-  }, function () { POLL.busy = false; paintSync(); });
+  }, function () { POLL.busy = false; paintSync(); paintNet(); });
 }
 
 function startPolling() {
@@ -1362,11 +1452,13 @@ function loadCache() {
 
 function setOffline(on) {
   POLL.offline = !!on;
+  if (!on) NET.state = 'idle';
   $('offbar').classList.toggle('on', !!on);
   paintSync();
+  paintNet();
 }
-window.addEventListener('online',  function () { setOffline(false); refreshNow(true); });
-window.addEventListener('offline', function () { setOffline(true); });
+window.addEventListener('online',  function () { NET.state = 'idle'; setOffline(false); refreshNow(true); });
+window.addEventListener('offline', function () { NET.state = 'offline'; setOffline(true); });
 
 /* --- install prompt --- */
 var deferredInstall = null;
@@ -1568,7 +1660,7 @@ function save() {
   if (dup && dup.code !== S.editing) return showErr('Ginagamit na ang code na ito ng "' + dup.desc + '".');
 
   $('saveBtn').disabled = true; $('saveBtn').textContent = 'Sine-save…';
-  API.call('saveProduct', [payload], function (res) {
+  API.call('saveProduct', [payload], function (res, meta) {
     $('saveBtn').disabled = false; $('saveBtn').textContent = 'I-save';
     var np = res.product;
     if (S.editing) {
@@ -1583,8 +1675,9 @@ function save() {
     if (res.logged) { S.histLoaded = false; POLL.histSig = ''; }
     closeSheets();
     applyFilters();
-    toast(res.isNew ? 'Naidagdag. I-encode din sa POS mo.'
-                    : (res.logged ? 'Na-save at na-record sa price history.' : 'Na-save.'));
+    toast((meta && meta.replayed) ? 'Na-save na pala kanina \u2014 walang duplicate.'
+        : res.isNew ? 'Naidagdag. I-encode din sa POS mo.'
+        : (res.logged ? 'Na-save at na-record sa price history.' : 'Na-save.'));
   }, function (e) {
     $('saveBtn').disabled = false; $('saveBtn').textContent = 'I-save';
     showErr(e.message || 'Hindi na-save. Subukan ulit.');
