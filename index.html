@@ -1371,7 +1371,7 @@ var BUB_KEY = 'pml_bubble_v1';
 
 /* ---- engine ng calculator (hiwalay sa UI para malinis subukan) ---- */
 function calcEngine() {
-  return { cur: '0', prev: null, op: null, fresh: true, err: false };
+  return { cur: '0', prev: null, op: null, fresh: true, err: false, pct: null };
 }
 function calcRound(n) {
   if (!isFinite(n)) return n;
@@ -1390,6 +1390,7 @@ function calcKey(st, k) {
   if (k === 'clear') return calcEngine();
 
   if (/^[0-9]$/.test(k)) {
+    st.pct = null;
     if (st.fresh) { st.cur = k; st.fresh = false; }
     else if (st.cur === '0') st.cur = k;
     else if (st.cur.replace(/[-.]/g, '').length < 12) st.cur += k;
@@ -1397,12 +1398,14 @@ function calcKey(st, k) {
   }
 
   if (k === 'dot') {
+    st.pct = null;
     if (st.fresh) { st.cur = '0.'; st.fresh = false; }
     else if (st.cur.indexOf('.') === -1) st.cur += '.';
     return st;
   }
 
   if (k === 'back') {
+    st.pct = null;
     if (st.fresh) return st;
     st.cur = st.cur.length > 1 ? st.cur.slice(0, -1) : '0';
     if (st.cur === '-' || st.cur === '') st.cur = '0';
@@ -1410,6 +1413,7 @@ function calcKey(st, k) {
   }
 
   if (k === 'sign') {
+    st.pct = null;
     if (st.cur === '0') return st;
     st.cur = st.cur.charAt(0) === '-' ? st.cur.slice(1) : '-' + st.cur;
     return st;
@@ -1417,6 +1421,7 @@ function calcKey(st, k) {
 
   if (k === 'pct') {
     var v = parseFloat(st.cur) || 0;
+    st.pct = v;                       // itago para maipakita sa itaas: "123 + 8%"
     // Ang % ay sumusunod sa nakabinbing operasyon:
     //   123 + 8%  ->  8% NG 123 = 9.84   (kaya 132.84 pagka-=)
     //   200 * 10% ->  0.10 lang
@@ -1432,6 +1437,7 @@ function calcKey(st, k) {
   }
 
   if (k === '+' || k === '-' || k === '*' || k === '/') {
+    st.pct = null;
     if (st.op !== null && !st.fresh) {
       var r = calcApply(st.prev, st.op, parseFloat(st.cur));
       if (!isFinite(r)) { st.err = true; st.cur = 'Error'; return st; }
@@ -1446,6 +1452,7 @@ function calcKey(st, k) {
   }
 
   if (k === 'eq') {
+    st.pct = null;
     if (st.op === null || st.prev === null) { st.fresh = true; return st; }
     var v = calcApply(st.prev, st.op, parseFloat(st.cur));
     if (!isFinite(v)) { st.err = true; st.cur = 'Error'; st.op = null; st.prev = null; return st; }
@@ -1470,8 +1477,12 @@ var OP_SIGN = { '+':'+', '-':'\u2212', '*':'\u00D7', '/':'\u00F7' };
 
 function paintCalc() {
   $('cpOut').textContent = calcShow(CE.cur);
-  $('cpSub').textContent = (CE.op && CE.prev !== null)
-    ? calcShow(String(CE.prev)) + ' ' + OP_SIGN[CE.op] : '';
+  var sub = '';
+  if (CE.op && CE.prev !== null) {
+    sub = calcShow(String(CE.prev)) + ' ' + OP_SIGN[CE.op];
+    if (CE.pct !== null) sub += ' ' + calcShow(String(CE.pct)) + '%  =';
+  }
+  $('cpSub').textContent = sub;
   Array.prototype.forEach.call($('cpPad').querySelectorAll('.op'), function (b) {
     b.classList.toggle('armed', CE.fresh && CE.op === b.dataset.k);
   });
