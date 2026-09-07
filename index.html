@@ -328,7 +328,15 @@ button{border:0;background:none;cursor:pointer}
 .sizerow button[aria-pressed="true"]{background:var(--ink);border-color:var(--ink);color:#fff}
 
 .fold{max-height:0;overflow:hidden;transition:max-height .25s ease}
-.fold.open{max-height:260px}
+.fold.open{max-height:340px}
+
+.discrow{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.discrow .cinp{flex:1;margin-bottom:0}
+.discrow .discDel{flex:none;width:40px;height:48px;border-radius:12px;background:var(--paper);
+  color:var(--muted);font-size:19px;line-height:1}
+.discrow .discDel:disabled{opacity:.35}
+.addDisc{width:100%;height:44px;border-radius:12px;background:var(--paper);
+  border:1px dashed var(--line);color:var(--ink);font-weight:700;font-size:13px;margin-bottom:8px}
 
 .resgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:6px}
 .res{border-radius:14px;padding:14px 14px 13px}
@@ -579,11 +587,9 @@ button{border:0;background:none;cursor:pointer}
 
   <div class="fold" id="foldDisc">
     <div class="cstep"><span class="cnum">3</span> Mga discount</div>
-    <div class="cinp pct">
-      <span class="pre">%</span>
-      <input id="cDisc" inputmode="decimal" placeholder="Halimbawa: 2 3 2" aria-label="Mga discount">
-    </div>
-    <div class="chint">Paghiwalayin ng space o kuwit kung magkasunod — isa-isang babawasin, HINDI pinagsasama.</div>
+    <div id="discList"></div>
+    <button class="addDisc" id="addDisc" type="button">+ Magdagdag ng discount</button>
+    <div class="chint">Bawat kahon ay hiwalay na babawasin nang sunod-sunod &mdash; HINDI pinagsasama.</div>
   </div>
 
   <div class="cstep" style="margin-top:22px"><span class="cnum">&#10003;</span> Resulta</div>
@@ -1317,7 +1323,13 @@ function pickSupplier(cat) {
       b.setAttribute('aria-pressed', 'false');
     });
   }
-  if (cat !== 'mixmagic88') $('cDisc').value = '';
+  if (cat === 'mixmagic88') {
+    if (!document.querySelectorAll('#discList .discrow').length) {
+      addDiscRow(false); addDiscRow(false); addDiscRow(false);
+    }
+  } else {
+    clearDiscRows();
+  }
 
   // itago ang "bilang ng piraso" kapag presyo mismo ang gagamitin
   var noPcs = !!NO_PCS[cat];
@@ -1424,21 +1436,51 @@ function tierNote(cat, baseUnit) {
   return '';
 }
 
-/* Parse ng "2 3 2" -> [2, 3, 2]. Bawat isa ay hiwalay na babawasin sa presyo,
+/* Bawat discount ay sarili nang textbox — sunod-sunod itong babawasin sa presyo,
    HINDI pagsasamahin bilang isang malaking porsyento. */
-function parseDiscounts(raw) {
-  return String(raw || '').split(/[\s,]+/)
-    .map(function (t) { return parseFloat(t); })
-    .filter(function (n) { return !isNaN(n) && isFinite(n) && n !== 0; });
-}
 function applyDiscounts(price, discounts) {
   return discounts.reduce(function (p, d) { return p * (1 - d / 100); }, price);
+}
+
+function discRowHTML() {
+  return '<div class="discrow">' +
+    '<div class="cinp pct"><span class="pre">%</span>' +
+    '<input class="discInput" inputmode="decimal" placeholder="hal. 2" aria-label="Discount"></div>' +
+    '<button class="discDel" type="button" aria-label="Alisin ang discount na ito">&times;</button>' +
+    '</div>';
+}
+function addDiscRow(focus) {
+  $('discList').insertAdjacentHTML('beforeend', discRowHTML());
+  var rows = document.querySelectorAll('#discList .discrow');
+  var row = rows[rows.length - 1];
+  row.querySelector('.discInput').addEventListener('input', computePrice);
+  row.querySelector('.discDel').addEventListener('click', function () {
+    row.remove();
+    syncDiscButtons();
+    computePrice();
+  });
+  syncDiscButtons();
+  if (focus) row.querySelector('.discInput').focus();
+}
+function syncDiscButtons() {
+  var rows = document.querySelectorAll('#discList .discrow');
+  Array.prototype.forEach.call(rows, function (r) {
+    r.querySelector('.discDel').disabled = rows.length <= 1;
+  });
+}
+function clearDiscRows() {
+  $('discList').innerHTML = '';
+}
+function getDiscounts() {
+  return Array.prototype.map.call(document.querySelectorAll('#discList .discInput'), function (i) {
+    return parseFloat(i.value);
+  }).filter(function (n) { return !isNaN(n) && isFinite(n) && n !== 0; });
 }
 
 function computePrice() {
   var casePrice = parseFloat($('cPrice').value);
   var items     = parseFloat($('cItems').value);
-  var discounts = parseDiscounts($('cDisc').value);
+  var discounts = getDiscounts();
 
   if (isNaN(casePrice) || casePrice <= 0) {
     $('cUnitNote').textContent = '';
@@ -1499,7 +1541,7 @@ function computePrice() {
 }
 
 function resetCalc() {
-  $('cPrice').value = ''; $('cItems').value = ''; $('cDisc').value = '';
+  $('cPrice').value = ''; $('cItems').value = ''; clearDiscRows();
   CALC.cat = ''; CALC.size = '';
   Array.prototype.forEach.call(document.querySelectorAll('#sizeRow button'),
     function (b) { b.setAttribute('aria-pressed', 'false'); });
@@ -1522,7 +1564,7 @@ $('sizeRow').addEventListener('click', function (e) {
 });
 $('cPrice').addEventListener('input', computePrice);
 $('cItems').addEventListener('input', computePrice);
-$('cDisc').addEventListener('input', computePrice);
+$('addDisc').addEventListener('click', function () { addDiscRow(true); computePrice(); });
 $('cReset').onclick = resetCalc;
 
 /* ================= floating calculator (chat head) ================= */
