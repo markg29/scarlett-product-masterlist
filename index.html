@@ -578,11 +578,12 @@ button{border:0;background:none;cursor:pointer}
   </div>
 
   <div class="fold" id="foldDisc">
-    <div class="cstep"><span class="cnum">3</span> Magkano ang discount?</div>
+    <div class="cstep"><span class="cnum">3</span> Mga discount</div>
     <div class="cinp pct">
       <span class="pre">%</span>
-      <input id="cDisc" inputmode="decimal" placeholder="Halimbawa: 10" aria-label="Discount">
+      <input id="cDisc" inputmode="decimal" placeholder="Halimbawa: 2 3 2" aria-label="Mga discount">
     </div>
+    <div class="chint">Paghiwalayin ng space o kuwit kung magkasunod — isa-isang babawasin, HINDI pinagsasama.</div>
   </div>
 
   <div class="cstep" style="margin-top:22px"><span class="cnum">&#10003;</span> Resulta</div>
@@ -1423,10 +1424,21 @@ function tierNote(cat, baseUnit) {
   return '';
 }
 
+/* Parse ng "2 3 2" -> [2, 3, 2]. Bawat isa ay hiwalay na babawasin sa presyo,
+   HINDI pagsasamahin bilang isang malaking porsyento. */
+function parseDiscounts(raw) {
+  return String(raw || '').split(/[\s,]+/)
+    .map(function (t) { return parseFloat(t); })
+    .filter(function (n) { return !isNaN(n) && isFinite(n) && n !== 0; });
+}
+function applyDiscounts(price, discounts) {
+  return discounts.reduce(function (p, d) { return p * (1 - d / 100); }, price);
+}
+
 function computePrice() {
   var casePrice = parseFloat($('cPrice').value);
   var items     = parseFloat($('cItems').value);
-  var discount  = parseFloat($('cDisc').value) || 0;
+  var discounts = parseDiscounts($('cDisc').value);
 
   if (isNaN(casePrice) || casePrice <= 0) {
     $('cUnitNote').textContent = '';
@@ -1434,7 +1446,7 @@ function computePrice() {
     return showResult(0, 0);
   }
 
-  var discounted = casePrice - (casePrice * (discount / 100));
+  var discounted = applyDiscounts(casePrice, discounts);
   var unitCost   = items ? discounted / items : discounted;
   var baseUnit   = items ? casePrice / items  : casePrice;
 
@@ -1472,9 +1484,14 @@ function computePrice() {
   // ---- live na paliwanag ----
   $('cUnitNote').textContent = NO_PCS[CALC.cat] ? '' : unitNote(casePrice, items);
   var live = tierNote(CALC.cat, baseUnit);
-  if (CALC.cat === 'mixmagic88' && discount > 0) {
-    live = '<b>Puhunan may discount:</b> ' + peso(r2(unitCost)) +
-           ' (dating ' + peso(r2(baseUnit)) + ' bago ang ' + money(discount) + '% discount)';
+  if (CALC.cat === 'mixmagic88' && discounts.length) {
+    var factor = applyDiscounts(100, discounts) / 100;
+    var effPct = r2((1 - factor) * 100);
+    var sum    = r2(discounts.reduce(function (a, b) { return a + b; }, 0));
+    var chain  = discounts.map(function (d) { return money(d) + '%'; }).join(' \u2192 ');
+    live = '<b>Sunod-sunod na discount:</b> ' + chain + ' = epektibong ' + money(effPct) + '%' +
+           (discounts.length > 1 ? ' <span style="color:var(--scarlet)">(HINDI ' + money(sum) + '%)</span>' : '') +
+           '<br><b>Puhunan pagkatapos:</b> ' + peso(r2(unitCost)) + ' (dating ' + peso(r2(baseUnit)) + ')';
   }
   $('cLiveNote').innerHTML = live;
 
