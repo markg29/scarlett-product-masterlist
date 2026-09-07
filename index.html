@@ -415,6 +415,39 @@ button{border:0;background:none;cursor:pointer}
 .sw[aria-pressed="true"]{background:var(--good)}
 .sw[aria-pressed="true"]::after{transform:translateX(19px)}
 
+.cinp.pcs.dim{opacity:.4}
+.cinp.pcs.dim input{pointer-events:none}
+.csel .note.live{color:var(--ink);font-weight:600;margin-top:5px}
+.csel .note.live b{color:var(--ink)}
+.csel .note.warn{color:var(--scarlet);font-weight:700}
+
+.res.sell.loss{background:var(--scarlet)}
+.res.sell.loss .t{color:#FFD3D9}
+.res.sell.loss .v{color:#fff}
+.res.sell.thin{background:#FFEFC0}
+.res.sell.thin .t{color:#8A4A12}
+
+.kita.loss{background:rgba(215,38,61,.10)}
+.kita.loss .t,.kita.loss .v{color:var(--scarlet)}
+
+.suppchip{display:inline-flex;align-items:center;gap:4px;font-size:10.5px;font-weight:700;
+  background:var(--paper);border-radius:999px;padding:3px 9px;color:var(--ink);margin-left:6px}
+
+.chint.live{color:var(--ink);font-weight:600}
+.tierline{display:inline-block;margin-right:10px;color:var(--muted)}
+.tierline.on{color:var(--ink);font-weight:700}
+.tierline .arrow{color:var(--scarlet);margin-right:2px}
+.badge.sup{background:#E9ECFF;color:#3B4BB8}
+.res.sell.thin{background:#FFEFC0}
+.res.sell.thin .v{color:#8A4A12}
+.res.sell.loss{background:var(--scarlet)}
+.res.sell.loss .v{color:#fff}
+.chealth{display:none;align-items:center;gap:7px;margin-top:9px;border-radius:12px;
+  padding:9px 12px;font-size:12.5px;font-weight:700}
+.chealth.on{display:flex}
+.chealth.loss{background:rgba(215,38,61,.10);color:var(--scarlet)}
+.chealth.thin{background:#FFEFC0;color:#8A4A12}
+
 /* offline banner */
 .offbar{position:fixed;left:0;right:0;top:0;z-index:60;background:var(--scarlet);color:#fff;
   font-size:12.5px;font-weight:700;text-align:center;padding:7px 12px;
@@ -521,16 +554,18 @@ button{border:0;background:none;cursor:pointer}
     <span class="pre">&#8369;</span>
     <input id="cPrice" inputmode="decimal" placeholder="Per piece o per case" aria-label="Presyo">
   </div>
-  <div class="cinp pcs">
+  <div class="cinp pcs" id="pcsWrap">
     <span class="pre" style="font-family:'Archivo';font-size:12.5px;font-weight:700">pcs</span>
     <input id="cItems" inputmode="decimal" placeholder="Bilang ng piraso sa case" aria-label="Bilang ng piraso">
   </div>
-  <div class="chint">Kung per piece na ang presyo, iwanang blangko ang bilang ng piraso.</div>
+  <div class="chint" id="cHint">Kung per piece na ang presyo, iwanang blangko ang bilang ng piraso.</div>
+  <div class="chint live" id="cUnitNote"></div>
 
   <div class="cstep"><span class="cnum">2</span> Saan ito galing?</div>
   <div class="csel">
     <select id="cSup" class="empty" aria-label="Supplier"></select>
     <div class="note" id="cSupNote"></div>
+    <div class="note live" id="cLiveNote"></div>
   </div>
 
   <div class="fold" id="foldSize">
@@ -559,6 +594,7 @@ button{border:0;background:none;cursor:pointer}
     <span class="t">Kita kada piraso</span>
     <span class="v">&#8369;<span id="cKita">0.00</span></span>
   </div>
+  <div class="chealth" id="cHealthRow"></div>
 
   <div class="actions">
     <button class="btn ghost" id="cReset">I-reset</button>
@@ -627,6 +663,14 @@ button{border:0;background:none;cursor:pointer}
         <div class="side" id="marginOut">Ilagay ang cost at sell price</div>
       </div>
       <div class="hint">Markup = (Sell ÷ Cost − 1) × 100. Awtomatiko itong kinukuwenta.</div>
+    </div>
+
+    <div class="field">
+      <label for="fSupplier">Supplier (opsyonal)</label>
+      <div class="csel" style="margin-bottom:0">
+        <select id="fSupplier" class="empty" aria-label="Supplier"></select>
+      </div>
+      <div class="hint">Para malaman later kung saang supplier galing ang presyong ito.</div>
     </div>
 
     <div class="field">
@@ -1157,6 +1201,9 @@ function actBadge(a) {
   var cls = key === 'ADDED' ? 'added' : key === 'DELETED' ? 'deleted' : 'updated';
   return '<span class="act ' + cls + '">' + (ACT_LABEL[key] || 'Palit presyo') + '</span>';
 }
+function supTag(h) {
+  return h.supplier ? '<span class="badge sup">' + esc(supplierLabel(h.supplier)) + '</span>' : '';
+}
 
 function snapshot(cost, price) {
   var bits = [];
@@ -1179,7 +1226,7 @@ function histCardHTML(h) {
   return '<button class="hcard" data-code="' + esc(h.code) + '">' +
     '<span class="top"><h4>' + esc(h.desc || '(walang pangalan)') + '</h4>' +
     '<span class="clock">' + clockOf(h.date) + '</span></span>' +
-    '<span class="sub">' + actBadge(h.action) + esc(h.code) + '</span>' +
+    '<span class="sub">' + actBadge(h.action) + supTag(h) + esc(h.code) + '</span>' +
     histBody(h) +
     '<span class="hby">' + esc(h.by || '—') + '</span></button>';
 }
@@ -1220,14 +1267,31 @@ var SUPPLIERS = [
 ];
 var CALC = { cat:'', size:'', anim:{}, last:{ cost:0, sell:0 } };
 
-function buildSuppliers() {
-  var opts = ['<option value="">Piliin ang supplier\u2026</option>'];
+function supplierOptionsHTML(placeholder) {
+  var opts = ['<option value="">' + placeholder + '</option>'];
   SUPPLIERS.forEach(function (x) {
     opts.push('<option value="' + x.v + '">' + x.ico + '  ' + x.nm +
       (x.sub ? ' \u2014 ' + x.sub : '') + '</option>');
   });
-  $('cSup').innerHTML = opts.join('');
+  return opts.join('');
 }
+function supplierLabel(code) {
+  if (!code) return '';
+  var x = SUPPLIERS.filter(function (s) { return s.v === code; })[0];
+  return x ? (x.ico + ' ' + x.nm) : code;
+}
+function buildSuppliers() {
+  $('cSup').innerHTML = supplierOptionsHTML('Piliin ang supplier\u2026');
+  $('fSupplier').innerHTML = supplierOptionsHTML('Wala / hindi alam');
+  $('fSupplier').addEventListener('change', function () {
+    this.classList.toggle('empty', !this.value);
+  });
+}
+
+/* Ang tatlong ito ay diretso sa presyo mismo kumukuwenta — hindi ginagamit
+   ang bilang ng piraso, kaya itinatago natin ang field na 'yon para hindi
+   malito kung case price pa rin ba ang ilalagay. */
+var NO_PCS = { marby:1, gardenia:1, mantika:1 };
 
 function pickSupplier(cat) {
   CALC.cat = cat;
@@ -1253,6 +1317,13 @@ function pickSupplier(cat) {
     });
   }
   if (cat !== 'mixmagic88') $('cDisc').value = '';
+
+  // itago ang "bilang ng piraso" kapag presyo mismo ang gagamitin
+  var noPcs = !!NO_PCS[cat];
+  $('pcsWrap').hidden = noPcs;
+  $('cPrice').placeholder = noPcs ? 'Presyo kada piraso' : 'Per piece o per case';
+  if (noPcs) $('cItems').value = '';
+
   computePrice();
 }
 
@@ -1280,6 +1351,14 @@ function animateNum(id, target, isFloat) {
   CALC.anim[id] = requestAnimationFrame(step);
 }
 
+function calcHealth(puhunan, benta) {
+  if (!(puhunan > 0) || !(benta > 0)) return '';
+  var m = r2((benta / puhunan - 1) * 100);
+  if (m < 0) return 'loss';
+  if (m < THIN_PCT) return 'thin';
+  return '';
+}
+
 function showResult(puhunan, benta) {
   var kita = benta - puhunan;
   CALC.last = { cost: puhunan, sell: benta };
@@ -1291,6 +1370,57 @@ function showResult(puhunan, benta) {
   } else {
     $('cKitaBox').classList.remove('on');
   }
+
+  // margin health — parehong panuntunan gaya ng masterlist (THIN_PCT)
+  var h = calcHealth(puhunan, benta);
+  $('cSell').parentElement.parentElement.className = 'res sell' + (h ? ' ' + h : '');
+  var hb = $('cHealthRow');
+  if (h === 'loss') {
+    hb.className = 'chealth on loss';
+    hb.textContent = 'Lugi ng ' + peso(r2(puhunan - benta)) + ' kada piraso \u2014 tingnan ulit ang presyo.';
+  } else if (h === 'thin') {
+    hb.className = 'chealth on thin';
+    hb.textContent = 'Manipis na kita \u2014 mas mababa sa ' + THIN_PCT + '% ang markup.';
+  } else {
+    hb.className = 'chealth';
+    hb.textContent = '';
+  }
+}
+
+/* ---- live na paliwanag: hindi ito bahagi ng kuwenta, display lang ---- */
+function unitNote(casePrice, items) {
+  if (!(casePrice > 0)) return '';
+  return items > 0
+    ? 'Kinukuwenta bilang ' + peso(r2(casePrice / items)) + ' kada piraso (' +
+      peso(casePrice) + ' \u00F7 ' + items + ' pcs).'
+    : 'Kinukuwenta bilang ' + peso(casePrice) + ' kada piraso (walang binigay na bilang ng piraso).';
+}
+function tierRow(label, on) {
+  return '<span class="tierline' + (on ? ' on' : '') + '">' +
+    (on ? '<span class="arrow">\u25B8</span>' : '') + label + '</span>';
+}
+function tierNote(cat, baseUnit) {
+  if (cat === 'urbano') {
+    return tierRow('\u2264\u20B110 \u2192 +\u20B12', baseUnit <= 10) +
+           tierRow('\u20B110\u201356.99 \u2192 +\u20B15', baseUnit > 10 && baseUnit < 57) +
+           tierRow('\u2265\u20B157 \u2192 8% markup', baseUnit >= 57);
+  }
+  if (cat === 'donnajhok') {
+    return tierRow('\u2264\u20B157 \u2192 +\u20B15', baseUnit <= 57) +
+           tierRow('>\u20B157 \u2192 8% markup', baseUnit > 57);
+  }
+  if (cat === 'mixmagic88') {
+    return '';   // ipapakita na lang sa ibaba, may aktwal na numero
+  }
+  if (cat === 'marby' || cat === 'gardenia') {
+    return '<b>Paalala:</b> presyo mismo ang ginagamit \u2014 ' +
+           'siguraduhing PER PIECE ang inilagay mo, hindi presyo ng buong case.';
+  }
+  if (cat === 'mantika') {
+    return '<b>Paalala:</b> presyo ng buong container ang ilagay \u2014 ' +
+           'hindi kailangan ang bilang ng piraso.';
+  }
+  return '';
 }
 
 function computePrice() {
@@ -1298,7 +1428,11 @@ function computePrice() {
   var items     = parseFloat($('cItems').value);
   var discount  = parseFloat($('cDisc').value) || 0;
 
-  if (isNaN(casePrice) || casePrice <= 0) return showResult(0, 0);
+  if (isNaN(casePrice) || casePrice <= 0) {
+    $('cUnitNote').textContent = '';
+    $('cLiveNote').innerHTML = '';
+    return showResult(0, 0);
+  }
 
   var discounted = casePrice - (casePrice * (discount / 100));
   var unitCost   = items ? discounted / items : discounted;
@@ -1335,6 +1469,15 @@ function computePrice() {
       break;
   }
 
+  // ---- live na paliwanag ----
+  $('cUnitNote').textContent = NO_PCS[CALC.cat] ? '' : unitNote(casePrice, items);
+  var live = tierNote(CALC.cat, baseUnit);
+  if (CALC.cat === 'mixmagic88' && discount > 0) {
+    live = '<b>Puhunan may discount:</b> ' + peso(r2(unitCost)) +
+           ' (dating ' + peso(r2(baseUnit)) + ' bago ang ' + money(discount) + '% discount)';
+  }
+  $('cLiveNote').innerHTML = live;
+
   showResult(puhunan, Math.round(benta));
 }
 
@@ -1346,6 +1489,10 @@ function resetCalc() {
   $('cSup').value = '';
   $('cSup').classList.add('empty');
   $('cSupNote').innerHTML = '';
+  $('cLiveNote').innerHTML = '';
+  $('cUnitNote').textContent = '';
+  $('pcsWrap').hidden = false;
+  $('cPrice').placeholder = 'Per piece o per case';
   $('foldSize').classList.remove('open');
   $('foldDisc').classList.remove('open');
   showResult(0, 0);
@@ -1742,7 +1889,7 @@ function sigOf(list) {
   var h = 5381;
   for (var i = 0; i < list.length; i++) {
     var p = list[i];
-    var s = p.code + '|' + p.price + '|' + p.cost + '|' + p.status + '|' + p.updated + '|' + p.desc + '|' + p.alt;
+    var s = p.code + '|' + p.price + '|' + p.cost + '|' + p.status + '|' + p.updated + '|' + p.desc + '|' + p.alt + '|' + (p.supplier || '');
     for (var j = 0; j < s.length; j++) h = ((h * 33) ^ s.charCodeAt(j)) >>> 0;
   }
   return list.length + ':' + h;
@@ -1928,6 +2075,7 @@ function openDetail(code) {
     '<div class="d-code">' + esc(p.code) + '</div>' +
     '<div style="margin-top:10px"><span class="badge ' + (p.status === 'ACTIVE' ? 'on' : 'offb') + '">' +
       (p.status === 'ACTIVE' ? 'Active' : 'Inactive') + '</span>' +
+      (p.supplier ? ' <span class="badge sup">' + esc(supplierLabel(p.supplier)) + '</span>' : '') +
       (healthOf(p) === 'loss'
         ? ' <span class="badge warn">Lugi ng ' + peso(r2(p.cost - p.price)) + ' kada piraso</span>'
         : healthOf(p) === 'thin'
@@ -1962,7 +2110,7 @@ function openDetail(code) {
     box.className = 'hist';
     box.innerHTML = rows.map(function (h) {
       return '<div class="hrow"><div class="hd">' + when(h.date) + '</div>' +
-        '<div style="margin-top:4px">' + actBadge(h.action) + '</div>' +
+        '<div style="margin-top:4px">' + actBadge(h.action) + supTag(h) + '</div>' +
         histBody(h) +
         '<div class="hby">' + esc(h.by) + '</div></div>';
     }).join('');
@@ -2014,6 +2162,8 @@ function openEditor(code) {
   $('fCost').value = p && p.cost ? p.cost : '';
   $('fPrice').value = p && p.price ? p.price : '';
   $('fAlt').value = p ? p.alt : '';
+  $('fSupplier').value = (p && p.supplier) || '';
+  $('fSupplier').classList.toggle('empty', !$('fSupplier').value);
   setStatusBtn(!p || p.status === 'ACTIVE');
   recalc();
   countAlt();
@@ -2062,6 +2212,7 @@ function save() {
     price: r2(parseFloat($('fPrice').value) || 0),
     status: $('stActive').getAttribute('aria-pressed') === 'true' ? 'ACTIVE' : 'INACTIVE',
     alt: alt,
+    supplier: $('fSupplier').value,
     origCode: S.editing || ''
   };
   if (!payload.desc) return showErr('Kailangan ng item description.');
